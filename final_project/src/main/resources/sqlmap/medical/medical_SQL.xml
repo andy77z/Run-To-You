@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.medical.mapper.MedicalMapper">
+	<resultMap type="medicalVO" id="detailMap">
+		<id property="pntCd" column="PNT_CD" />
+		<result property="pntNm" column="PNT_NM" />
+		<result property="sex" column="SEX" />
+		<result property="pntPrno" column="PNT_PRNO" />
+		<result property="age" column="AGE" />
+		<result property="addr" column="ADDR" />
+		<result property="pntHp" column="PNT_HP" />
+		<result property="symptoms" column="SYMPTOMS" />
+		<result property="rsvtNo" column="RSVT_NO" />
+		<collection property="cmnt" resultMap="cmntMap"></collection>
+	</resultMap>
+	
+	<resultMap type="medicalVitalSignVo" id="medicalVitalSignMap">
+		<id property="pntCd" column="PNT_CD"/>
+		<result property="age" column="AGE"/>
+		<result property="sex" column="SEX"/>
+		<result property="height" column="HEIGHT"/>
+		<result property="weight" column="WEIGHT"/>
+		<result property="vsBs" column="VS_BS"/>
+		<result property="vsTmp" column="VS_TMP"/>
+		<result property="vsBpMax" column="VS_BP_MAX"/>
+		<result property="vsBpMin" column="VS_BP_MIN"/>
+		<result property="vsDt" column="VS_DT"/>
+		<result property="symptoms" column="SYMPTOMS"/>
+		<collection property="cmnt" resultMap="cmntMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.medical.vo.CmntVO" id="cmntMap">
+		<result property="cmntNo" column="CMNT_NO" />
+		<result property="pntCd" column="PNT_CD" />
+		<result property="empCd" column="EMP_CD" />
+		<result property="empNm" column="EMP_NM" />
+		<result property="cmntCont" column="CMNT_CONT" />
+		<result property="cmntDt" column="CMNT_DT" />
+		<result property="cmntDate" column="cmntDate" />
+		<result property="cmntTime" column="cmntTime" />
+		<result property="cmntFixYn" column="CMNT_FIX_YN" />
+	</resultMap>
+	
+	<resultMap type="medicalRecordVo" id="medicalRecordMap">
+		<id property="treatCd" column="TREAT_CD"/>
+		<result property="treatDt" column="TREAT_DT"/>
+		<result property="pntAddr" column="PNT_ADDR"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<result property="pntPrno" column="PNT_PRNO"/>
+		<result property="pntHp" column="PNT_HP"/>
+		<result property="sex" column="SEX"/>
+		<result property="age" column="AGE"/>
+		<result property="height" column="HEIGHT"/>
+		<result property="weight" column="WEIGHT"/>
+		<result property="empNm" column="EMP_NM"/>
+		<result property="treatOp" column="TREAT_OP"/>
+		<collection property="prescription" resultMap="drugMap" />
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.medical.vo.PrescriptionVO" id="drugMap">
+		<result property="drugNm" column="DRUG_NM"/>
+		<result property="drugDoes" column="DRUG_DOES"/>
+		<result property="drugTimes" column="DRUG_TIMES"/>
+		<result property="prspTerm" column="PRSP_TERM"/>
+	</resultMap>
+	
+	<!-- 진료 예약 목록 -->
+	<select id="selectListMedicalYeyak" parameterType="hashMap" resultType="medicalVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListMedicalYeyak */
+		SELECT PNT.PNT_NM AS PNT_NM /* 이름 */
+		     , SUBSTR(PNT.PNT_PRNO, 1, 6) AS PNT_PRNO /* 생년월일 */
+		     , TO_DATE(SUBSTR(RSV.RSVT_DT, 1, 8)) AS RSVT_REG_DT /* 예약날짜 */
+		     , SUBSTR(RSV.RSVT_DT, 9, 2) || ':' || SUBSTR(RSV.RSVT_DT, 11, 2) AS RSVT_REG_TIME /* 예약시각 */
+		     , PNT.STATE_CD AS STATE_CD /* 상태코드 */
+		     , RSV.RSVT_NO AS RSVT_NO /* 예약번호 */
+		     , PNT.PNT_CD AS PNT_CD /* 환자코드 */
+		  FROM PATIENT PNT, RESERVATION RSV
+		<where>
+		   AND PNT.PNT_CD = RSV.PNT_CD /* 환자 - 예약(환자코드) */
+		   AND PNT.STATE_CD = 'PS1' /* 예약완료 */
+		   AND RSV.EMP_CD = #{empCd} /* 본인 환자만 */
+		   AND SUBSTR(RSV.RSVT_DT, 1, 8) = TO_CHAR(SYSDATE,'YYYYMMDD') /* 오늘 날짜  */
+		   AND RSV.RSVT_NO NOT IN(SELECT RSVT_NO
+		                            FROM RECEPT
+		                           WHERE RSVT_NO IS NOT NULL) /* 접수하면 안 보이게 */
+		 ORDER BY RSV.RSVT_DT /* 예약시각 순으로 정렬 */
+		</where>
+	</select>
+
+	<!-- 진료 대기 목록 -->
+	<select id="selectListMedicalDaegi" parameterType="hashMap" resultType="medicalVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListMedicalDaegi */
+		SELECT PNT.PNT_NM AS PNT_NM /* 이름 */
+		     , PNT.PNT_CD AS PNT_CD /* 환자코드 */
+		     , SUBSTR(PNT.PNT_PRNO, 1, 6) AS PNT_PRNO /* 생년월일 */
+		     , RSV.RSVT_REG_DT AS RSVT_REG_DT /* 예약일시 */
+		     , TO_DATE(SUBSTR(RCT.RCPT_DT, 1, 8)) AS RSVT_REG_DT /* 접수날짜 */
+		     , CASE PNT.STATE_CD WHEN 'PS4' THEN ' 우선대기 '
+		       ELSE SUBSTR(RCT.RCPT_DT, 9, 2) || ':' || SUBSTR(RCT.RCPT_DT, 11, 2)
+		       END AS RSVT_REG_TIME /* 환자 상태가 '우선대기'면 우선대기, 아니면 접수시각  */
+		     , PNT.STATE_CD AS STATE_CD /* 상태코드 */
+		     , RSV.RSVT_NO AS RSVT_NO /* 예약번호 */
+		     , CASE PNT.STATE_CD WHEN 'PS4' THEN 1
+		       ELSE 2
+		       END AS FIRST /* 1이면 우선대기 */
+			 , RCT.RCPT_NO AS RCPT_NO /* 접수번호 */
+		  FROM PATIENT PNT, RESERVATION RSV, RECEPT RCT
+		<where>
+		   AND PNT.PNT_CD = RSV.PNT_CD /* 환자 - 예약(환자코드) */
+		   AND RSV.RSVT_NO = RCT.RSVT_NO /* 예약 - 접수(예약번호) */
+		   AND PNT.STATE_CD IN('PS3', 'PS4') /* 대기, 우선대기 */
+		   AND RSV.EMP_CD = #{empCd} /* 본인 환자만 */
+		   AND SUBSTR(RCT.RCPT_DT, 1, 8) = TO_CHAR(SYSDATE,'YYYYMMDD') /* 오늘 날짜  */
+		   AND RCT.RCPT_NO NOT IN (SELECT RCPT_NO
+		                             FROM TREAT T, RCV R
+		                            WHERE T.TREAT_CD = R.TREAT_CD) /* 수납 안 한거 */
+         ORDER BY FIRST, RCT.RCPT_DT /* 우선대기, 접수시각 순으로 정렬 */
+		</where>
+	</select>
+	
+	<!-- 진료 상세 조회 -->
+	<select id="selectDetailMedical" parameterType="medicalVo" resultMap="detailMap">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectDetailMedical */
+		SELECT PNT.PNT_NM AS PNT_NM /* 이름 */
+		     , CASE WHEN SUBSTR(PNT.PNT_PRNO, 8, 1) IN('1', '3') THEN '남'
+		       ELSE '여'
+		       END AS SEX /* 성별 */
+		     , SUBSTR(PNT.PNT_PRNO, 1, 6) AS PNT_PRNO /* 생년월일 */
+		     , CASE WHEN SUBSTR(PNT_PRNO, 8, 1) IN('1', '2') THEN EXTRACT(YEAR FROM SYSDATE) - (1900 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		       ELSE EXTRACT(YEAR FROM SYSDATE) - (2000 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		       END AS AGE /* 나이 */
+		     , PNT.PNT_ADDR AS ADDR /* 주소 */
+		     , PNT.PNT_HP AS PNT_HP /* 연락처 */
+		     , RSV.SYMPTOMS AS SYMPTOMS /* 증상 */
+		     , RSV.RSVT_NO /* 예약번호 */
+		     , PNT.PNT_CD /* 환자코드 */
+		     , CMT.CMNT_NO /* 코멘트 번호 */
+		     , CMT.EMP_CD /* 직원코드 */
+		     , CMT.EMP_NM /* 작성자 */
+		     , CMT.CMNT_CONT /* 코멘트 내용 */
+		     , CMT.CMNT_DT /* 코멘트 작성일시 */
+		     , CMT.cmntDate /* 코멘트 작성일 */
+		     , CMT.cmntTime /* 코멘트 작성시 */
+		     , CMT.CMNT_FIX_YN /* 코멘트 고정여부 */
+		  FROM PATIENT PNT, RESERVATION RSV
+		     , (SELECT C.CMNT_NO /* 코멘트 번호 */
+		             , C.EMP_CD /* 직원코드 */
+		             , C.PNT_CD /* 환자코드 */
+		             , C.CMNT_CONT /* 코멘트 내용 */
+		             , C.CMNT_DT /* 코멘트 작성일시 */
+		             , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS cmntDate /* 코멘트 작성일 */
+		             , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'HH24:MI:SS') AS cmntTime /* 코멘트 작성시 */
+		             , C.CMNT_FIX_YN /* 코멘트 고정여부 */
+		             , E.EMP_NM
+		          FROM CMNT C, EMP E
+		         WHERE C.EMP_CD = E.EMP_CD /* 코멘트 - 직원(직원코드) */
+		         ORDER BY CMNT_DT) CMT /* 작성일시순으로 정렬 */
+		<where>
+		   AND PNT.PNT_CD = RSV.PNT_CD /* 환자 - 예약(환자코드) */
+		   AND RSV.PNT_CD = CMT.PNT_CD(+) /* 환자코드 */
+		   AND RSV.RSVT_NO = #{rsvtNo} /* 예약번호 */
+		</where>
+	</select>
+	
+	<!-- 코멘트용 -->
+	<select id="selectDetailMedical2" parameterType="string" resultMap="detailMap">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectDetailMedical */
+		SELECT PNT.PNT_NM AS PNT_NM /* 이름 */
+		     , CASE WHEN SUBSTR(PNT.PNT_PRNO, 8, 1) IN('1', '3') THEN '남'
+		       ELSE '여'
+		       END AS SEX /* 성별 */
+		     , SUBSTR(PNT.PNT_PRNO, 1, 6) AS PNT_PRNO /* 생년월일 */
+		     , CASE WHEN SUBSTR(PNT_PRNO, 8, 1) IN('1', '2') THEN EXTRACT(YEAR FROM SYSDATE) - (1900 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		       ELSE EXTRACT(YEAR FROM SYSDATE) - (2000 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		       END AS AGE /* 나이 */
+		     , PNT.PNT_ADDR AS ADDR /* 주소 */
+		     , PNT.PNT_HP AS PNT_HP /* 연락처 */
+		     , RSV.SYMPTOMS AS SYMPTOMS /* 증상 */
+		     , RSV.RSVT_NO /* 예약번호 */
+		     , PNT.PNT_CD /* 환자코드 */
+		     , CMT.CMNT_NO /* 코멘트 번호 */
+		     , CMT.EMP_CD /* 직원코드 */
+		     , CMT.EMP_NM /* 작성자 */
+		     , CMT.CMNT_CONT /* 코멘트 내용 */
+		     , CMT.CMNT_DT /* 코멘트 작성일시 */
+		     , CMT.cmntDate /* 코멘트 작성일 */
+		     , CMT.cmntTime /* 코멘트 작성시 */
+		     , CMT.CMNT_FIX_YN /* 코멘트 고정여부 */
+		  FROM PATIENT PNT, RESERVATION RSV
+		     , (SELECT C.CMNT_NO /* 코멘트 번호 */
+		             , C.EMP_CD /* 직원코드 */
+		             , C.PNT_CD /* 환자코드 */
+		             , C.CMNT_CONT /* 코멘트 내용 */
+		             , C.CMNT_DT /* 코멘트 작성일시 */
+		             , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS cmntDate /* 코멘트 작성일 */
+		             , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'HH24:MI:SS') AS cmntTime /* 코멘트 작성시 */
+		             , C.CMNT_FIX_YN /* 코멘트 고정여부 */
+		             , E.EMP_NM
+		          FROM CMNT C, EMP E
+		         WHERE C.EMP_CD = E.EMP_CD /* 코멘트 - 직원(직원코드) */
+		           AND C.PNT_CD = #{pntCd}
+		         ORDER BY CMNT_DT) CMT /* 작성일시순으로 정렬 */
+		<where>
+		   AND PNT.PNT_CD = RSV.PNT_CD /* 환자 - 예약(환자코드) */
+		   AND RSV.PNT_CD = CMT.PNT_CD(+) /* 환자코드 */
+		   AND PNT.PNT_CD = #{pntCd} /* 예약번호 */
+		</where>
+	</select>
+	
+	<!-- 코멘트 저장 -->
+	<insert id="insertCmnt" parameterType="kr.or.ddit.medical.vo.CmntVO">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertCmnt */
+		INSERT INTO CMNT (
+			CMNT_NO /* 코멘트 번호 */
+		  , PNT_CD /* 환자코드 */
+		  , EMP_CD /* 작성자 */
+		  , CMNT_CONT /* 코멘트 내용 */
+		  , CMNT_DT /* 코멘트 작성일 */
+		  , CMNT_FIX_YN /* 코멘트 고정여부 */
+		) VALUES (
+			(SELECT NVL(MAX(CMNT_NO), 0) +1 FROM CMNT) /* 코멘트 번호 */
+		  , #{pntCd} /* 환자코드 */
+		  , #{empCd} /* 작성자 */
+		  , #{cmntCont} /* 코멘트 내용 */
+		  , TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') /* 코멘트 작성일 */
+		  , 0 /* 코멘트 고정여부 */
+		)
+	</insert>
+	
+	<!-- 증상 수정 -->
+	<update id="updateSymptoms" parameterType="medicalVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.updateSymptoms */
+		UPDATE RESERVATION
+		   SET SYMPTOMS = #{symptoms}
+		 WHERE RSVT_NO = #{rsvtNo}
+	</update>
+	
+	<!-- 코멘트 수정 -->
+	<update id="updateCmnt" parameterType="cmntVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.updateCmnt */
+		UPDATE CMNT
+		   SET CMNT_CONT = #{cmntCont}
+		 WHERE CMNT_NO = #{cmntNo}
+	</update>
+	
+	<!-- 코멘트 삭제 -->
+	<delete id="deleteCmnt" parameterType="cmntVo">
+	 	/* kr.or.ddit.medical.vo.MedicalMapper.deleteCmnt */
+		DELETE FROM CMNT
+		 WHERE CMNT_NO = #{cmntNo}
+	</delete>
+
+	<!-- 사진 저장 -->
+	<insert id="insertCam" parameterType="medicalVo">
+		INSERT INTO CHART_FILE (
+			FILE_NO /* 파일번호 */
+		  , BASE64IMG /* base64 인코딩 */
+		  , FILE_CLS /* 파일분류 */
+		  , FILE_NM /* 파일명 */
+		  , FILE_REG_DT /* 파일 등록일 */
+		  , EMP_CD /* 파일 등록자 코드 */
+		  , RCPT_NO /* 접수코드 */
+		) VALUES (
+			(SELECT NVL(MAX(FILE_NO), 0) +1 FROM CHART_FILE) /* 파일번호 */
+		  , #{base64img} /* base64 인코딩 */
+		  , '환자사진' /* 파일분류 */
+		  , '환자사진_' || (SELECT NVL(MAX(FILE_NO), 0) +1 FROM CHART_FILE) /* 파일명 */
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') /* 파일 등록일 */
+		  , #{empCd} /* 파일 등록자 코드 */
+		  , #{rcptNo} /* 접수코드 */
+		)
+	</insert>
+
+	<!-- 진단 및 처방 검색 -->
+	<select id="selectListJindanSch" resultType="medicalSchVo" parameterType="hashMap">
+	/* kr.or.ddit.medical.vo.MedicalMapper.selectListJindanSch */
+	
+		<!-- 질병코드, 병명 조회 -->
+		<if test='type == "1"'>
+		SELECT DIS_CD /* 질병코드 */
+		     , DIS_NM /* 질병명 */
+		  FROM DIS
+		 WHERE DIS_NM LIKE '%' || #{schTxt} || '%'
+		</if>
+		
+		<!-- 퀵오더 조회 -->
+		<if test='type == "2"'>
+		SELECT DISTINCT QO_CD /* 퀵오더 코드 */
+		              , QO_NM /* 퀵오더명 */
+		  FROM QUICK_ORDER
+		 WHERE QO_NM LIKE '%' || #{schTxt} || '%'
+		</if>
+		
+		<!-- 처방 조회 -->
+		<if test='type == "3"'>
+		SELECT DR.DRUG_CD AS DRUG_CD /* 의약품코드 */
+		     , DR.DRUG_NM AS DRUG_NM /* 약품명 */
+		  FROM DRUG DR, CM_CD CM
+		<where>
+		   AND TO_CHAR(DR.CLS_CD) = CM.CM_CD
+		   AND (DR.DRUG_NM LIKE '%' || #{schTxt} || '%' OR CM.CD_NM LIKE '%' || #{schTxt} || '%')
+		</where>
+		</if>
+	</select>
+	
+	<!-- 수가코드 검색 -->
+	<select id="selectListSoogiSch" resultType="medicalSchVo" parameterType="hashMap">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListSoogiSch 검사명으로 검색 */
+		SELECT SG_CD /* 수가코드 */
+		     , SG_NM /* 수가명칭 */
+		     , TO_CHAR(SG_AMT, 'fm999,999,999,999') AS SG_AMT /* 수가금액 vo에서 int형을 못 받아서 문자형으로 변경 */
+		  FROM SG_CD
+		<where>
+		   AND J_CLS IN('02', '03') /* 장구분 검사 촬영 */
+		   AND SG_NM LIKE '%' || #{schTxt} || '%' /* 검색어 */
+		</where>
+	</select>
+	
+	<!-- 바이탈사인 저장 -->
+	<insert id="insertVitalSign" parameterType="medicalVitalSignVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertVitalSign */
+		INSERT INTO VS (
+			PNT_CD /* 환자코드 */
+		  , VS_DT /* 측정일시 */
+		  , VS_BP_MAX /* 최대혈압 */
+		  , VS_BP_MIN /* 최소혈압 */
+		  , VS_TMP /* 체온 */
+		  , VS_BS /* 혈당 */
+		  , HEIGHT /* 신장 */
+		  , WEIGHT /* 체중 */
+		) VALUES (
+			#{pntCd} /* 환자코드 */
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') /* 측정일시 */
+		  , #{vsBpMax} /* 최대혈압 */
+		  , #{vsBpMin} /* 최소혈압 */
+		  , #{vsTmp} /* 체온 */
+		  , #{vsBs} /* 혈당 */
+		  , #{height} /* 신장 */
+		  , #{weight} /* 체중 */
+		)
+	</insert>
+	
+	<!-- 해당 환자의 모든 바이탈사인 기록 조회 -->
+	<select id="selectListVitalSignRecord" resultType="medicalVitalSignVo" parameterType="hashMap">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListVitalSignRecord */
+		SELECT CASE WHEN SUBSTR(P.PNT_PRNO, 8, 1) IN('1', '2') THEN EXTRACT(YEAR FROM SYSDATE) - (1900 + SUBSTR(P.PNT_PRNO, 1, 2)) +1
+		       ELSE EXTRACT(YEAR FROM SYSDATE) - (2000 + SUBSTR(P.PNT_PRNO, 1, 2)) +1
+		       END AS AGE /* 나이 */
+		     , CASE WHEN SUBSTR(P.PNT_PRNO, 8, 1) IN('1', '3') THEN '남' ELSE '여' END AS SEX /* 성별 */
+		     , V.HEIGHT AS HEIGHT /* 신장 */
+		     , V.WEIGHT AS WEIGHT /* 체중 */
+		     , V.VS_BS AS VS_BS /* 혈당 */
+		     , V.VS_TMP AS VS_TMP /* 체온 */
+		     , V.VS_BP_MAX AS VS_BP_MAX /* 최대혈압 */
+		     , V.VS_BP_MIN AS VS_BP_MIN /* 최소혈압 */
+		     , TO_CHAR(TO_DATE(V.VS_DT, 'YYYYMMDDHH24MISS'), 'YYYY/MM/DD') AS VS_DT /* 측정일 */
+		     , V.PNT_CD AS PNT_CD /* 환자코드 */
+		  FROM PATIENT P, VS V
+		<where>
+		   AND P.PNT_CD = V.PNT_CD /* 환자 - 바이탈사인(환자코드) */
+		   AND P.PNT_CD = #{pntCd} /* 환자코드 */
+		</where>
+	</select>
+
+	<!-- 환자 정보, 가장 최근 바이탈사인 받아오기 -->
+	<select id="selectVitalSignDetail" resultMap="medicalVitalSignMap" parameterType="hashMap">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectVitalSignDetail */
+		SELECT TA.T1 AS AGE /* 나이 */
+		     , TA.T2 AS SEX /* 성별 */
+		     , TA.T3 AS HEIGHT /* 신장 */
+		     , TA.T4 AS WEIGHT /* 체중 */
+		     , TA.T5 AS VS_BS /* 혈당 */
+		     , TA.T6 AS VS_TMP /* 체온 */
+		     , TA.T7 AS VS_BP_MAX /* 최대혈압 */
+		     , TA.T8 AS VS_BP_MIN /* 최소혈압 */
+		     , DT AS VS_DT /* 측정일시 */
+		     , TA.T9 AS PNT_CD /* 환자코드 */
+		     , (SELECT SYMPTOMS
+		          FROM RESERVATION RSV
+		        <where>
+		           AND RSV.RSVT_NO = #{rsvtNo}
+		           AND RSV.PNT_CD = TA.T9
+		        </where>   
+		       ) AS SYMPTOMS /* 증상 */
+		     , CMT.CMNT_NO /* 코멘트 번호 */
+		     , CMT.EMP_CD /* 직원코드 */
+		     , CMT.EMP_NM /* 작성자 */
+		     , CMT.CMNT_CONT /* 코멘트 내용 */
+		     , CMT.CMNT_DT /* 코멘트 작성일시 */
+		     , CMT.cmntDate /* 코멘트 작성일 */
+		     , CMT.cmntTime /* 코멘트 작성시 */
+		     , CMT.CMNT_FIX_YN /* 코멘트 고정여부 */
+		  FROM (SELECT CASE WHEN SUBSTR(P.PNT_PRNO, 8, 1) IN('1', '2') THEN EXTRACT(YEAR FROM SYSDATE) - (1900 + SUBSTR(P.PNT_PRNO, 1, 2)) +1
+		               ELSE EXTRACT(YEAR FROM SYSDATE) - (2000 + SUBSTR(P.PNT_PRNO, 1, 2)) +1
+		               END AS T1 /* 나이 */
+		             , CASE WHEN SUBSTR(P.PNT_PRNO, 8, 1) IN('1', '3') THEN '남' ELSE '여' END AS T2 /* 성별 */
+		             , V.HEIGHT AS T3 /* 신장 */
+		             , V.WEIGHT AS T4 /* 체중 */
+		             , V.VS_BS AS T5 /* 혈당 */
+		             , V.VS_TMP AS T6 /* 체온 */
+		             , V.VS_BP_MAX AS T7 /* 최대혈압 */
+		             , V.VS_BP_MIN AS T8 /* 최소혈압 */
+		             , V.VS_DT AS DT /* 측정일시 */
+		             , P.PNT_CD AS T9 /* 환자코드 */
+		          FROM PATIENT P, VS V
+		        <where>
+		           AND P.PNT_CD = V.PNT_CD /* 환자 - 바이탈사인(환자코드) */
+		           AND P.PNT_CD = #{pntCd} /* 환자코드 */
+		        </where>
+		         ORDER BY V.VS_DT DESC) TA, /* 최근순으로 정렬 */
+               (SELECT C.CMNT_NO /* 코멘트 번호 */
+                     , C.EMP_CD /* 직원코드 */
+                     , C.PNT_CD /* 환자코드 */
+                     , C.CMNT_CONT /* 코멘트 내용 */
+                     , C.CMNT_DT /* 코멘트 작성일시 */
+                     , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS cmntDate /* 코멘트 작성일 */
+                     , TO_CHAR(TO_DATE(C.CMNT_DT, 'YYYYMMDDHH24MISS'), 'HH24:MI:SS') AS cmntTime /* 코멘트 작성시 */
+                     , C.CMNT_FIX_YN /* 코멘트 고정여부 */
+                     , E.EMP_NM /* 작성자 */
+                  FROM CMNT C, EMP E
+                <where>
+                   AND C.EMP_CD = E.EMP_CD /* 코멘트 - 직원(직원코드) */
+                   AND C.PNT_CD = #{pntCd}/* 환자코드 */
+                </where>
+             ORDER BY CMNT_DT) CMT /* 코멘트 작성일 순으로 정렬 */
+	</select>
+	
+	<!-- 진료 저장 -->
+	<insert id="insertTreat" parameterType="medicalTreatVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertTreat */
+		INSERT INTO TREAT (
+			TREAT_CD /* 진료코드 */
+		  , RCPT_NO /* 접수번호 */
+		  , EMP_CD /* 의사코드 */
+		  , PNT_CD /* 환자코드 */
+		  , TREAT_OP /* 진료소견 */
+		  , TREAT_DT /* 진료일시 */
+		) VALUES (
+			#{treatCd} /* 진료코드 */
+		  , #{rcptNo} /* 접수번호 */
+		  , #{empCd} /* 의사코드 */
+		  , #{pntCd} /* 환자코드 */
+		  , #{treatOp} /* 진로소견 */
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') /* 진료일시 */
+		)
+	</insert>
+	
+	<!-- 우선대기 환자일 경우 진료 업데이트로 처리 -->
+	<update id="updateTreat" parameterType="medicalTreatVo">
+		UPDATE TREAT
+		   SET TREAT_OP = #{treatOp} /* 진료소견 */
+		     , TREAT_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') /* 진료일시 */
+		 WHERE RCPT_NO = #{rcptNo}
+	</update>
+	
+	<!-- 마지막 진료코드 +1 구하기 -->
+	<select id="selectLastTreatCd" resultType="string">
+		SELECT 'TRT' || LPAD(NVL(MAX(SUBSTR(TREAT_CD, 4, 5)), 0) +1, 5, 0) AS treatCd
+		  FROM TREAT
+	</select>
+	
+	<!-- 처방 저장 -->
+	<insert id="insertPrescription" parameterType="prescriptionVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertPrescription */
+		INSERT INTO PRESCRIPTION (
+			PRSP_CD /* 처방코드 */
+		  , TREAT_CD /* 진료코드 */
+		  , DRUG_CD /* 의약품코드 */
+		  , DRUG_TIMES /* 복용횟수 */
+		  , DRUG_DOES /* 복용량 */
+		  , PRSP_TERM /* 처방기간 */
+		  , PRSP_DRUG_AMT /* 처방약금액 */
+		  , PRSP_DT /* 처방일시 */
+		) VALUES (
+			(SELECT 'PRS' || LPAD(NVL(MAX(SUBSTR(PRSP_CD, 4, 5)), 0) +1, 5, 0) FROM PRESCRIPTION) /* 처방코드 */
+		  , #{treatCd} /* 진료코드 */
+		  , #{drugCd} /* 의약품코드 */
+		  , #{drugTimes} /* 복용횟수 */
+		  , #{drugDoes} /* 복용량 */
+		  , #{prspTerm} /* 처방기간 */
+		  , (SELECT DRUG_AMT * (#{drugTimes} * #{drugDoes} * #{prspTerm}) FROM DRUG WHERE DRUG_CD=#{drugCd}) /* 처방약금액 */
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') /* 처방일시 */
+		)
+	</insert>
+	
+	<!-- 수납 내역 추가 -->
+	<insert id="insertRcv" parameterType="medicalTreatVo">
+		INSERT INTO RCV (
+			RCV_CD /* 수납코드 */
+		  , RCV_AMT /* 수납금액 */
+		  , N_RCV_AMT /* 미수납금액 */
+		  , TREAT_CD /* 진료코드 */
+		) VALUES (
+			'RCV' || TO_CHAR(LPAD(RCV_CD_SEQ.NEXTVAL, '5', 0)) /* 수납코드 */
+		  , (SELECT SUM(ITEMS_AMT) + 10000
+		       FROM TREAT_ITEMS_AMT
+		      WHERE TREAT_CD = #{treatCd}) /* 수납금액 */
+		  , (SELECT SUM(ITEMS_AMT) + 10000
+		       FROM TREAT_ITEMS_AMT
+		      WHERE TREAT_CD = #{treatCd}) /* 미수납금액 */
+		  , #{treatCd} /* 진료코드 */
+		)
+	</insert>
+	
+	<!-- 질병 저장 -->
+	<insert id="insertDig" parameterType="medicalTreatVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertDig */
+		INSERT INTO DIG (
+			DIS_CD /* 질병코드 */
+		  , DIS_NM /* 질병명 */
+		  , DIG_CLS /* 소증우선순위 */
+		  , TREAT_CD /* 진료코드 */
+		) VALUES (
+			#{disCd} /* 질병코드 */
+		  , #{disNm} /* 질병명 */
+		  , (SELECT NVL(MAX(DIG_CLS), 0) +1
+		       FROM DIG
+		      WHERE TREAT_CD = #{treatCd}) /* 소증우선순위 */
+		  , #{treatCd} /* 진료코드 */
+		)
+	</insert>
+	
+	<!-- 검사 저장 -->
+	<insert id="insertInspection" parameterType="medicalTreatVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.insertInspection */
+		INSERT INTO INSPECTION (
+			INSP_CD /* 검사코드 */
+		  , TREAT_CD /* 진료코드 */
+		  , SG_CD /* 수가코드 */
+		) VALUES (
+			(SELECT 'ISP' || LPAD(NVL(MAX(SUBSTR(INSP_CD, 4, 5)), 0) +1, 5, 0) FROM INSPECTION) /* 검사코드 */
+		  , #{treatCd} /* 진료코드 */
+		  , #{sgCd} /* 수가코드 */
+		)
+	</insert>	
+	
+	<!-- 차트 파일 진료 코드 업데이트 -->
+	<update id="updateChartFile" parameterType="medicalTreatVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.updateChartFile */
+		UPDATE CHART_FILE
+		   SET TREAT_CD = #{treatCd}
+		 WHERE RCPT_NO = #{rcptNo}
+	</update>
+	
+	<!-- 접수번호에 해당하는 진료 코드 가져오기 -->
+	<select id="getTreatCd" parameterType="string" resultType="string">
+		SELECT TREAT_CD
+		  FROM TREAT
+		 WHERE RCPT_NO = #{rcptNo}
+	</select>
+	
+	<!-- 진료기록 상세 조회 -->
+	<select id="selectListTreatRecord" resultMap="medicalRecordMap" parameterType="string">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListTreatRecord */
+		SELECT TBL_A.TREAT_DT AS TREAT_DT /* 진료일 */
+		     , TBL_A.PNT_ADDR AS PNT_ADDR /* 주소 */
+		     , TBL_A.TREAT_CD AS TREAT_CD /* 진료코드 */
+		     , TBL_A.PNT_NM AS PNT_NM /* 이름 */
+		     , RPAD(SUBSTR(TBL_A.PNT_PRNO, 1, 8), 14, '*') AS PNT_PRNO /* 주민번호 */
+		     , TBL_A.PNT_HP AS PNT_HP /* 연락처 */
+		     , TBL_A.SEX AS SEX /* 성별 */
+		     , TBL_A.AGE AS AGE /* 나이 */
+		     , TBL_A.HEIGHT AS HEIGHT /* 신장 */
+		     , TBL_A.WEIGHT AS WEIGHT /* 체중 */
+		     , TBL_A.EMP_NM  AS EMP_NM /* 담당의 */
+		     , TBL_A.TREAT_OP AS TREAT_OP /* 진료소견 */
+		     , TBL_B.DRUG_NM AS DRUG_NM /* 약품명 */
+		     , TBL_B.DRUG_DOES AS DRUG_DOES /* 복용량 */
+		     , TBL_B.DRUG_TIMES AS DRUG_TIMES /* 복용횟수 */
+		     , TBL_B.PRSP_TERM AS PRSP_TERM /* 처방기간 */
+		  FROM (SELECT SUBSTR(TRT.TREAT_DT, 1, 4) || '-' ||
+		               SUBSTR(TRT.TREAT_DT, 5, 2) || '-' ||
+		               SUBSTR(TRT.TREAT_DT, 7, 2) AS TREAT_DT /* 진료일 */
+		  			 , TRT.TREAT_CD AS TREAT_CD /* 진료코드 */
+		             , PNT.PNT_ADDR AS PNT_ADDR /* 주소 */
+		             , PNT.PNT_NM AS PNT_NM /* 이름 */
+		             , PNT.PNT_PRNO AS PNT_PRNO /* 주민번호 */
+		             , VS.HEIGHT AS HEIGHT /* 키 */
+		             , VS.WEIGHT AS WEIGHT /* 체중 */
+		             , PNT.PNT_HP AS PNT_HP /* 연락처 */
+		             , CASE WHEN SUBSTR(PNT.PNT_PRNO, 8, 1) IN('1', '3') THEN '남'
+		               ELSE '여'
+		               END AS SEX /* 성별 */
+		             , CASE WHEN SUBSTR(PNT_PRNO, 8, 1) IN('1', '2') THEN EXTRACT(YEAR FROM SYSDATE) - (1900 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		               ELSE EXTRACT(YEAR FROM SYSDATE) - (2000 + SUBSTR(PNT_PRNO, 1, 2)) +1
+		               END AS AGE /* 나이 */
+		             , EMP.EMP_NM AS EMP_NM /* 담당의 */
+		             , TRT.TREAT_OP AS TREAT_OP /* 진료소견 */
+		             , PNT.PNT_CD AS A_PNT_CD /* A_환자코드 */
+		          FROM PATIENT PNT /* 환자 */, TREAT TRT /* 진료 */, DOCTOR DOC /* 의사 */, EMP EMP /* 직원 */, VS VS /* 바이탈사인 */
+		        <where>
+		           AND PNT.PNT_CD = TRT.PNT_CD /* 환자 - 진료(환자코드) */
+		           AND PNT.PNT_CD = VS.PNT_CD /* 환자 - 바이탈사인(환자코드) */
+		           AND TRT.TREAT_CD = #{treatCd} /* 진료코드 */
+		           AND EMP.EMP_CD = DOC.EMP_CD /* 직원 - 의사(직원코드) */
+		           AND DOC.EMP_CD = TRT.EMP_CD /* 의사 - 진료(직원코드) */
+		        </where>
+		       ) TBL_A
+		     , (SELECT DRG.DRUG_NM AS DRUG_NM /* 약품명 */
+		             , PRE.DRUG_TIMES AS DRUG_TIMES /* 복용횟수 */
+		             , PRE.DRUG_DOES AS DRUG_DOES /* 복용량 */
+		             , PRE.PRSP_TERM AS PRSP_TERM /* 처방기간 */
+		             , PNT.PNT_CD AS B_PNT_CD /* B_환자코드 */
+		          FROM PATIENT PNT /* 환자 */, TREAT TRT /* 진료 */, DRUG DRG /* 의약품 */, PRESCRIPTION PRE /* 처방전 */
+		        <where>
+		           AND PNT.PNT_CD = TRT.PNT_CD /* 환자 - 투약(환자코드) */
+		           AND TRT.TREAT_CD = PRE.TREAT_CD /* 진료 - 투약(진료코드) */
+		           AND TRT.TREAT_CD = #{treatCd} /* 진료코드 */
+		           AND DRG.DRUG_CD = PRE.DRUG_CD /* 의약품 - 투약(의약품코드) */
+		        </where>
+		       ) TBL_B
+		 WHERE TBL_A.A_PNT_CD = TBL_B.B_PNT_CD
+	</select>
+	
+	<!-- 우선대기 환자의 검사내역 가져오기 -->
+	<select id="selectListOsDaegiInsp" resultType="medicalSchVo" parameterType="string">
+		SELECT S.SG_CD /* 수가코드 */
+		     , S.SG_NM /* 수가명칭 */
+		     , TO_CHAR(S.SG_AMT, 'fm999,999,999,999') AS SG_AMT /* 수가금액 vo에서 int형을 못 받아서 문자형으로 변경 */
+		  FROM INSPECTION I, SG_CD S
+		<where>
+		   AND I.SG_CD = S.SG_CD /* 검사 - 수가코드(수가코드) */
+		   AND I.TREAT_CD = (SELECT TREAT_CD
+		                       FROM TREAT
+		                      WHERE RCPT_NO = #{rcptNo}) /* 접수번호가 같은 진료코드를 가져온다. */
+		</where>
+	</select>
+	
+	<!-- 해당 환자의 진료일 목록 -->
+	<select id="selectListTreatDate" resultType="medicalRecordVo">
+		/* kr.or.ddit.medical.vo.MedicalMapper.selectListTreatDate 환자의 진료리스트 조회(진료일) */
+		SELECT TREAT_CD /* 진료코드 */
+		     , PNT_CD /* 환자코드 */
+		     , TO_CHAR(TO_DATE(TREAT_DT, 'YYYYMMDDHH24MISS'), 'YYYY/MM/DD') AS TREAT_DT /* 진료일 */
+		  FROM TREAT /* 진료 */
+		 WHERE PNT_CD = #{pntCd} /* 환자코드 */
+		 ORDER BY TREAT_DT /* 진료일순으로 정렬 */
+	</select>
+	
+<!--
+	검사하기 > 검사대기 : PS8
+	입원 > 입원대기 : PS9
+	수술 > 수술대기 : PS11
+	디폴트 > 수납대기 : PS6
+-->
+	<!-- 환자 상태 업데이트 -->
+	<update id="updatePntState" parameterType="hashMap">
+		UPDATE PATIENT
+		   SET STATE_CD = #{stateCd}
+		     , CHR_DR = (SELECT EMP_NM
+		                   FROM EMP
+		                  WHERE EMP_CD = #{empCd})
+		 WHERE PNT_CD = #{pntCd}
+	</update>
+	
+	<!-- 이미지 삭제 -->
+	<delete id="deleteCam" parameterType="medicalVo">
+		DELETE
+		  FROM CHART_FILE
+		 WHERE FILE_NO = #{fileNo}
+	</delete>
+
+	<!-- 사진목록 조회 -->
+	<select id="selectListCam" resultType="medicalVo" parameterType="hashMap">
+		SELECT FILE_NO
+     		, FILE_NM
+     		, BASE64IMG 
+     		, RCPT_NO
+     		, FILE_CLS
+		  FROM CHART_FILE
+		<where>
+		<if test='fileCls =="환자사진"'>
+	   	   AND FILE_CLS = '환자사진'
+		</if>
+		
+		<if test='fileCls =="검사"'>
+		   AND FILE_CLS = '검사'
+		</if>
+		   AND BASE64IMG IS NOT NULL
+		   AND (TREAT_CD = #{treatCd} OR RCPT_NO = #{rcptNo})
+		</where>
+	</select>
+	
+	<!-- 퀵오더 -->
+	<select id="setQoCd" resultType="medicalSchVo" parameterType="int">
+		SELECT D.DRUG_CD /* 의약품 코드 */
+		     , D.DRUG_NM /* 의약품명 */
+		     , Q.DRUG_TIMES /* 일일 복용 횟수 */
+		     , Q.DRUG_DOES /* 일회 복용량 */
+		     , Q.PRSP_TERM /* 처방기간 */
+		  FROM DRUG D, QUICK_ORDER Q
+		<where> 
+		   AND D.DRUG_CD = Q.DRUG_CD /* 의약품 - 퀵오더(의약품 코드) */
+		   AND Q.QO_CD = #{qoCd} /* 퀵오더 코드 */
+		</where>
+	</select>
+
+</mapper>

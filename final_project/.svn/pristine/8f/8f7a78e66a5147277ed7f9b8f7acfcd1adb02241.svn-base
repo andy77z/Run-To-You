@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.stats.mapper.StatsMapper">
+
+	<!-- 금일 매출 조회 -->
+	<select id="todayAmount" resultType="String">
+		SELECT SUM(RCV_AMT) AS TODAYAMOUNT
+		  FROM RCV
+		 WHERE RCV_DT BETWEEN TO_CHAR(SYSDATE, 'YYYYMMDD') AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+	</select>
+	
+	<!-- 금일 부서별 매출 조회 -->
+	<select id="deptAmount" parameterType="map" resultType="map">
+		SELECT
+            NVL((SELECT SUM(A.rcv_amt) AS SUM
+            FROM rcv A, EMP B, SEC C, TREAT D
+              WHERE 1=1
+             AND A.rcv_dt BETWEEN #{startDate} AND #{endDate}
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00001' ),0) AS sec1
+             ,
+             NVL((SELECT SUM(A.rcv_amt) AS SUM
+               FROM rcv A, EMP B, SEC C, TREAT D
+             WHERE 1=1
+             AND A.rcv_dt BETWEEN #{startDate} AND #{endDate}
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00002'),0) AS sec2
+             ,
+             NVL((SELECT SUM(A.rcv_amt) AS SUM
+               FROM rcv A, EMP B, SEC C, TREAT D
+              WHERE 1=1
+             AND A.rcv_dt BETWEEN #{startDate} AND #{endDate}
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00003' ),0) AS sec3
+        FROM DUAL
+	</select>
+	
+	<!-- 기간별 매출액 조회 -->
+	<select id="selectAmount" parameterType="statsVO" resultType="statsVO">
+		SELECT SUM(RCV_AMT) AS SUM
+		FROM RCV
+		WHERE RCV_DT BETWEEN #{startDate} AND #{endDate}
+	</select>
+	
+	<!-- 금일 환자 수 조회 -->
+	<select id="todayPatient" resultType="String">
+	SELECT COUNT(*) PNT_CNT
+      FROM RECEPT
+     WHERE SUBSTR(RCPT_DT,1,8)=TO_CHAR(SYSDATE,'YYYYMMDD')
+    </select>
+    
+   <!-- 최근 일주일간 환자 조회 -->
+   <select id="selectWeekPnt" resultType="statsVO">  
+		 SELECT
+		    (SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate, 'yyyymmdd')) AS today
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-1, 'yyyymmdd')) AS dayAgo1
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-2, 'yyyymmdd')) AS dayAgo2
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-3, 'yyyymmdd')) AS dayAgo3
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-4, 'yyyymmdd')) AS dayAgo4
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-5, 'yyyymmdd')) AS dayAgo5
+		    ,(SELECT COUNT(RCPT_NO)
+		    FROM RECEPT
+		    WHERE SUBSTR(RCPT_DT,1,8) = TO_CHAR(sysdate-6, 'yyyymmdd')) AS dayAgo6
+		FROM DUAL
+	</select>
+	
+	<!-- 최근 일주일간 매출 조회 -->
+	<select id="selectWeekAmount" resultType="statsVO">
+		SELECT
+		    (SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE, 'YYYYMMDD') AND TO_CHAR(SYSDATE, 'YYYYMMDD')) AS today
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-1, 'YYYYMMDD') AND TO_CHAR(SYSDATE-1, 'YYYYMMDD')) AS dayAgo1
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-2, 'YYYYMMDD') AND TO_CHAR(SYSDATE-2, 'YYYYMMDD')) AS dayAgo2
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-3, 'YYYYMMDD') AND TO_CHAR(SYSDATE-3, 'YYYYMMDD')) AS dayAgo3
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-4, 'YYYYMMDD') AND TO_CHAR(SYSDATE-4, 'YYYYMMDD')) AS dayAgo4
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-5, 'YYYYMMDD') AND TO_CHAR(SYSDATE-5, 'YYYYMMDD')) AS dayAgo5
+		    ,(SELECT SUM(rcv_amt) AS SUM
+               FROM rcv
+              WHERE rcv_dt BETWEEN TO_CHAR(SYSDATE-6, 'YYYYMMDD') AND TO_CHAR(SYSDATE-6, 'YYYYMMDD')) AS dayAgo6
+		FROM DUAL
+	</select>	
+	
+	<!-- 금일 부서별 환자 수 조회 -->
+	<select id="todayDeptPatient" resultType="statsVO">
+		SELECT
+            (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) = TO_CHAR(SYSDATE,'YYYYMMDD')
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00001')) AS sec1
+             ,
+             (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) = TO_CHAR(SYSDATE,'YYYYMMDD')
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00002')) AS sec2
+             ,
+             (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) = TO_CHAR(SYSDATE,'YYYYMMDD')
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00003')) AS sec3
+        FROM DUAL
+   </select>
+   
+   <!-- 부서별 선택 기간 환자 수 조회 -->
+	<select id="selectDatePatient" parameterType="map" resultType="map">
+		SELECT
+            NVL((SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,8) BETWEEN #{startDate} AND #{endDate}
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00001')),0) AS sec1
+             ,
+             NVL((SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,8) BETWEEN #{startDate} AND #{endDate}
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00002')),0) AS sec2
+             ,
+             NVL((SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,8) BETWEEN #{startDate} AND #{endDate}
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00003')),0) AS sec3
+        FROM DUAL
+	</select>
+	
+	<!-- 월간 환자 수 조회 -->
+	<select id="selectMonthPnt" parameterType="String" resultType="statsVO">
+		SELECT
+            (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectDate}||'%'
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00001')) AS sec1
+             ,
+             (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectDate}||'%'
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00002')) AS sec2
+             ,
+             (SELECT COUNT(*) PNT_CNT
+              FROM RECEPT
+             WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectDate}||'%'
+             AND EMP_CD IN(SELECT EMP_CD FROM EMP WHERE SEC_CD='SEC00003')) AS sec3
+        FROM DUAL
+   </select>
+   
+   <!-- 월간 매출 조회 -->
+   <select id="selectMonthAmount" parameterType="String" resultType="statsVO">
+   		SELECT
+            (SELECT SUM(A.rcv_amt) AS SUM
+            FROM rcv A, EMP B, SEC C, TREAT D
+              WHERE 1=1
+             AND SUBSTR(A.rcv_dt,1,6) LIKE '%'||#{selectDate}||'%'
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00001' ) AS sec1
+             ,
+             (SELECT SUM(A.rcv_amt) AS SUM
+            FROM rcv A, EMP B, SEC C, TREAT D
+              WHERE 1=1
+             AND SUBSTR(A.rcv_dt,1,6) LIKE '%'||#{selectDate}||'%'
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00002') AS sec2
+             ,
+             (SELECT SUM(A.rcv_amt) AS SUM
+            FROM rcv A, EMP B, SEC C, TREAT D
+              WHERE 1=1
+             AND SUBSTR(A.rcv_dt,1,6) LIKE '%'||#{selectDate}||'%'
+             AND A.TREAT_CD = D.TREAT_CD
+             AND B.EMP_CD = D.EMP_CD
+             AND B.SEC_CD = C.SEC_CD
+             AND C.SEC_CD = 'SEC00003') AS sec3
+        FROM DUAL
+   </select>
+   
+   <!-- 최근 5년 환자 수 조회 -->
+   <select id="selectYearPnt" resultType="map">
+		SELECT *
+ 		  FROM (
+ 		  		SELECT SUBSTR(RCPT_DT,1,4) AS 년도 ,COUNT(RCPT_DT) AS 결과
+         		FROM RECEPT
+         		GROUP BY SUBSTR(RCPT_DT,1,4)
+         		ORDER BY 1 DESC
+         		)
+		 WHERE ROWNUM <![CDATA[<]]>= 5
+   </select>
+   
+   <!-- 최근 5년 매출 조회 -->
+   <select id="selectYearSales" resultType="map">
+		SELECT *
+ 		  FROM (
+ 		  		SELECT SUBSTR(rcv_dt,1,4) AS 년도 ,SUM(rcv_amt) AS 결과
+         		FROM RCV
+         		GROUP BY SUBSTR(rcv_dt,1,4)
+         		ORDER BY 1 DESC
+         		)
+		 WHERE ROWNUM <![CDATA[<]]>= 5
+   </select>
+   
+   <!-- 의사 기간별 매출 조회 -->
+   	<select id="selectDoctorSales" parameterType="map" resultType="map">
+   		 SELECT NVL(SUM(A.RCV_AMT),0) AS SUM
+		   FROM RCV A, TREAT B, EMP C
+		  WHERE SUBSTR(A.RCV_DT,0,8) BETWEEN #{startDate} AND #{endDate}
+	        AND A.TREAT_CD = B.TREAT_CD
+	        AND B.EMP_CD = C.EMP_CD
+	        AND C.EMP_CD = #{empCd}
+   	</select>
+   	
+   <!-- 연도별 환자 수 조회 -->
+	<select id="selectYear" parameterType="string" resultType="map">
+		SELECT TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'01%')) AS "1월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'02%')) AS "2월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'03%')) AS "3월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'04%')) AS "4월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'05%')) AS "5월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'06%')) AS "6월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'07%')) AS "7월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'08%')) AS "8월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'09%')) AS "9월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'10%')) AS "10월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'11%')) AS "11월"
+                ,TO_CHAR((SELECT COUNT(*) FROM RECEPT WHERE SUBSTR(RCPT_DT,1,6) LIKE '%'||#{selectYear}||'12%')) AS "12월"
+           FROM DUAL	
+	</select>
+			
+   <!-- 연도별 매출 조회 -->
+	<select id="selectYearAmount" parameterType="string" resultType="map">
+	 SELECT NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'01%')),0) AS "1월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'02%')),0) AS "2월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'03%')),0) AS "3월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'04%')),0) AS "4월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'05%')),0) AS "5월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'06%')),0) AS "6월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'07%')),0) AS "7월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'08%')),0) AS "8월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'09%')),0) AS "9월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'10%')),0) AS "10월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'11%')),0) AS "11월"
+               ,NVL(TO_CHAR((SELECT SUM(rcv_amt) FROM rcv WHERE SUBSTR(rcv_dt,1,6) LIKE '%'||#{selectYear}||'12%')),0) AS "12월"
+          FROM DUAL	
+	</select>	
+	
+	<!-- 기간별 질병 순위 -->
+	<select id="selectDiseaseRank" parameterType="map" resultType="map">
+		SELECT *
+	       FROM (
+	             SELECT COUNT(B.DIS_CD) AS 합계,B.DIS_NM AS 질병명
+	               FROM TREAT A, DIG B
+	              WHERE A.TREAT_CD = B. TREAT_CD
+	                AND SUBSTR(A.TREAT_DT,0,8) BETWEEN #{startDate} AND #{endDate}
+	              GROUP BY B.DIS_NM
+	              ORDER BY 1 DESC
+	              )
+	        WHERE ROWNUM <![CDATA[<]]>=  #{selectRank} 
+	</select>	
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.main.mapper.MainMapper">
+	<!-- 직원,환자,예약 테이블에서 검색 -->
+	<select id="searchEpr" parameterType="string" resultType="kr.or.ddit.main.vo.SearchDataVO">
+		SELECT EMP_NM NM
+		      ,EMP_CD CD
+		      ,'직원' CLS
+		  FROM EMP
+		 WHERE EMP_NM LIKE '%'||#{data}||'%'
+		UNION ALL
+		SELECT PNT_NM
+		      ,PNT_CD
+		      ,'환자'
+		  FROM PATIENT
+		 WHERE PNT_NM LIKE '%'||#{data}||'%'
+		UNION ALL
+		SELECT (SELECT PNT_NM FROM PATIENT WHERE PNT_CD LIKE '%'||#{data}||'%')
+		      ,PNT_CD
+		      ,'예약'
+		  FROM RESERVATION
+		 WHERE PNT_CD LIKE '%'||#{data}||'%'
+	</select>
+</mapper>

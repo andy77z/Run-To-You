@@ -1,0 +1,18 @@
+package kr.or.ddit.receive.mapper;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.or.ddit.ent.vo.EntVO;
+
+public interface ReceiveMapper {
+	
+	public List<EntVO> getReceivePatient(Map<String, Object> map);
+	
+	public int getReceivePatientCount(String keyword);
+	
+	public List<EntVO> getReceiveCommitPatient(Map<String, Object> map);
+	
+	public int getReceiveCommitPatientCount(String keyword);
+	
+}

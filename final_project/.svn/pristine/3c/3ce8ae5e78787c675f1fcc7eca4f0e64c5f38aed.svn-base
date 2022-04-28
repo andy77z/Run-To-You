@@ -1,0 +1,41 @@
+package kr.or.ddit.receive.service.serviceImpl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.ent.vo.EntVO;
+import kr.or.ddit.receive.mapper.ReceiveMapper;
+import kr.or.ddit.receive.service.ReceiveService;
+
+@Service
+public class ReceiveServiceImpl implements ReceiveService{
+
+	@Autowired
+	ReceiveMapper rcMapper;
+	
+	@Override
+	public List<EntVO> getReceivePatient(Map<String, Object> map) throws Exception{
+		return rcMapper.getReceivePatient(map);
+	}
+
+	@Override
+	public int getReceivePatientCount(String keyword) throws Exception {
+		return rcMapper.getReceivePatientCount(keyword);
+	}
+
+	@Override
+	public List<EntVO> getReceiveCommitPatient(Map<String, Object> map) throws Exception {
+		return rcMapper.getReceiveCommitPatient(map);
+	}
+
+	@Override
+	public int getReceiveCommitPatientCount(String keyword) throws Exception {
+		return rcMapper.getReceiveCommitPatientCount(keyword);
+	}
+
+	
+	
+}

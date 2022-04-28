@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.patients.mapper.PatientsMapper">
+
+	<!-- 환자 수정 -->
+	<update id="updateInfo" parameterType="patientsVo">
+		UPDATE PATIENT
+        SET PNT_NM=#{pntNm}
+            , PNT_ADDR=#{addr}||'_'||#{detaddr}
+            , PNT_HP=#{pntHp1}||'-'||#{pntHp2}||'-'||#{pntHp3}
+            , SMK_YN=#{smkYn}
+            , DRK_YN=#{drkYn}
+            , PRGNT_YN=#{prgntYn}
+            , PRTCR_NM=#{prtcrNm}
+            , PRTCR_TEL=#{rtel1}||'-'||#{rtel2}||'-'||#{rtel3}
+        WHERE PNT_CD=#{pntCd}
+	</update>
+
+	<!-- 환자 등록 -->
+	<insert id="insertPatients" parameterType="patientsVo">
+		INSERT INTO PATIENT(PNT_CD, PNT_NM
+                            , PNT_PRNO, PNT_SEX
+                            , PNT_ADDR, PNT_HP
+                            , SMK_YN
+                            , DRK_YN, PRGNT_YN
+                            , PRTCR_NM
+                            , PRTCR_TEL, PNT_REG_DT)
+        VALUES('PNT'||TO_CHAR((SELECT LPAD((SELECT (MAX(SUBSTR(PNT_CD,4,5)))+1 FROM PATIENT), 5, '0') FROM PATIENT GROUP BY 1)), #{pntNm}
+                           , #{fPrno}||'-'||#{bPrno}, #{pntSex}
+                           , #{addr}||'_'||#{detaddr}, #{pntHp1}||'-'||#{pntHp2}||'-'||#{pntHp3}
+                           , #{smkYn}, #{drkYn}, #{prgntYn}
+                           , #{prtcrNm}
+                           , #{rtel1}||'-'||#{rtel2}||'-'||#{rtel3}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'))
+	</insert>
+	
+	<!-- 환자 목록 -->
+	<select id="patientsList" resultType="patientsVo" parameterType="String">
+		SELECT PNT_CD, PNT_NM
+               , REPLACE(PNT_PRNO, SUBSTR(PNT_PRNO,-6,6),'******') AS PNT_PRNO, PNT_SEX
+               , CASE WHEN PNT_ADDR LIKE '%@_' ESCAPE '@' THEN REPLACE(PNT_ADDR, '_', ' ')
+                      ELSE PNT_ADDR
+                      END AS PNT_ADDR
+               , PNT_HP
+               , CHR_DR, HEIGHT
+               , WEIGHT, SMK_YN
+               , DRK_YN, PRGNT_YN
+               , STATE_CD, PRTCR_NM
+               , PRTCR_TEL, PNT_REG_DT
+               , DEL_YN, ENABLED
+		FROM PATIENT
+		WHERE 1=1
+			<if test="keyWord!=null and keyWord!=''">
+				AND (	PNT_CD LIKE '%'||#{keyWord}||'%'
+					OR 	PNT_NM LIKE '%'||#{keyWord}||'%'
+					OR 	SUBSTR(PNT_PRNO,0,6) LIKE '%'||#{keyWord}||'%'
+					)
+			</if>
+	</select>
+	
+	<!-- 환자 상세보기 -->
+	<select id="detail" parameterType="String" resultType="patientsVo">
+	
+        SELECT P.PNT_CD, P.PNT_NM
+			   , REPLACE(P.PNT_PRNO, SUBSTR(P.PNT_PRNO,-6,6),'******') AS PNT_PRNO, P.PNT_SEX
+			   , CASE WHEN P.PNT_ADDR LIKE '%@_' ESCAPE '@' THEN REPLACE(P.PNT_ADDR, '_', ' ')
+                      ELSE P.PNT_ADDR
+                      END AS PNT_ADDR, P.PNT_HP , P.CHR_DR
+			   , P.HEIGHT, P.WEIGHT
+			   , CASE WHEN P.SMK_YN = 0 THEN 'N'
+                      WHEN P.SMK_YN = 1 THEN 'Y'  END AS SMOKING
+               , CASE WHEN P.DRK_YN = 0 THEN 'N'
+                      WHEN P.DRK_YN = 1 THEN 'Y' END AS DRINKING
+               , CASE WHEN P.PRGNT_YN = 0 THEN 'N'
+                      WHEN P.PRGNT_YN = 1 THEN 'Y' END AS PREGNANCY
+               , P.STATE_CD, P.PRTCR_NM
+			   , P.PRTCR_TEL, P.PNT_REG_DT
+			   , P.DEL_YN, P.ENABLED
+               ,(SELECT TRUNC(MONTHS_BETWEEN(TRUNC(SYSDATE), TO_DATE(T.BYEAR,'YYYYMMDD')) / 12) 
+                 FROM (SELECT CASE 
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='1' OR SUBSTR(PNT_PRNO,8,1)='2' THEN TO_NUMBER('19'||SUBSTR(PNT_PRNO,1,6))
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='3' OR SUBSTR(PNT_PRNO,8,1)='4' THEN TO_NUMBER('20'||SUBSTR(PNT_PRNO,1,6))
+                              END AS BYEAR
+                             , PNT_CD
+                       FROM PATIENT)T
+                 WHERE T.PNT_CD=#{pntCd}) AS AGE
+		FROM PATIENT P
+		WHERE P.PNT_CD =#{pntCd}  
+	</select>
+	
+	<!-- 환자 삭제 -->
+	<delete id="deletePatients" parameterType="String">
+		DELETE FROM PATIENT 
+		WHERE PNT_CD=#{pntCd}
+	</delete>
+	
+	<!-- 바이탈사인 정보 가져오기 -->
+	<!--  SUBSTR(VS_DT,0,4)||'-'||SUBSTR(VS_DT,5,2)||'-'||SUBSTR(VS_DT,7,2)||' '
+		||SUBSTR(VS_DT,9,2)||':'||SUBSTR(VS_DT,11,2)||':'||SUBSTR(VS_DT,13,2) AS  -->
+	<select id="vslist" parameterType="String" resultType="patientsVo">
+		SELECT PNT_CD, VS_DT, VS_BP_MAX, VS_TMP, VS_BS, VS_BP_MIN, HEIGHT, WEIGHT
+	    FROM VS
+	    WHERE PNT_CD = #{pntCd}  
+	    ORDER BY VS_DT DESC
+	</select>
+	
+	<!-- 바이탈사인 등록하기 -->
+	<insert id="insertVital" parameterType="patientsVo">
+		INSERT INTO VS (PNT_CD, VS_DT
+						, VS_BP_MAX, VS_TMP
+						, VS_BS, VS_BP_MIN
+						, HEIGHT, WEIGHT)
+		VALUES(#{pntCd}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'), #{vsBpMax}, #{vsTmp}, #{vsBs}, #{vsBpMin}, #{height},#{weight})
+	</insert>
+	
+	<!-- 바이탈사인 삭제하기 -->
+	<delete id="deleteVital" parameterType="map">
+		DELETE FROM VS 
+		WHERE VS_DT=#{vsDt}
+		AND PNT_CD=#{pntCd}
+	</delete>
+	
+	<!-- 진료내역 가져오기 -->
+	<select id="treatlist" parameterType="String" resultType="patientsVo">
+		SELECT T.TREAT_CD, T.EMP_CD, T.PNT_CD, T.TREAT_OP
+			   , TO_CHAR(TO_DATE(T.TREAT_DT,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS TREAT_DT, P.PNT_NM, E.EMP_NM 
+		FROM PATIENT P, TREAT T, EMP E
+		WHERE T.PNT_CD = P.PNT_CD 
+		AND T.EMP_CD = E.EMP_CD
+		AND P.PNT_CD=#{pntCd}
+	</select>
+</mapper>

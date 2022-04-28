@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.schedule.mapper.ScheduleMapper">
+	<insert id="insertSchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+		INSERT INTO SCHEDULE	
+		VALUES(SCD_NO_SEQ.NEXTVAL
+			  ,#{empCd}
+			  ,#{scdNm}
+			  ,#{scdCont}
+			  ,#{scdStTime}
+			  ,#{scdEndTime})
+	</insert>
+	
+	<select id="viewSchedule" parameterType="string" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+		SELECT SCD_NO
+		      ,EMP_CD
+		      ,SCD_NM
+		      ,SCD_CONT
+		      ,SCD_ST_TIME
+		      ,SCD_END_TIME
+		  FROM SCHEDULE
+		 WHERE EMP_CD=#{empCd}
+	</select>
+	
+	<update id="modifySchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+		UPDATE SCHEDULE
+		   SET SCD_NM		= #{scdNm}
+		      ,SCD_CONT		= #{scdCont}
+		      ,SCD_ST_TIME	= #{scdStTime}
+		      ,SCD_END_TIME	= #{scdEndTime}
+		 WHERE SCD_NO = #{scdNo}     
+	</update>
+	
+	<delete id="deleteSchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+		DELETE FROM SCHEDULE
+		 WHERE SCD_NO = #{scdNo}
+	</delete>
+	
+</mapper>

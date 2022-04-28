@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration PUBLIC "-//APACHE//DTD LOG4J 1.2//EN" "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<!-- Appenders -->
+	<!-- 콘솔 출력 부분 -->
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+        	<!--출력 패턴 설정... %C{1} 은 이벤트가 발생한 클래스만 출력-->
+            <param name="ConversionPattern" value="[%p] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %m%n" />
+        </layout>
+    </appender>
+
+	<!-- 파일 저장 부분 -->
+	<!-- 날짜별 로그 파일 생성 -->
+    <appender name="file" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="C:/log/log_flie.log" />
+	   	<param name="Append" value="true" />
+	   	<param name="DatePattern" value=".yyyy-MM-dd" />
+		<!-- 하루 간격 외에도 시간, 분 간격으로도 저장 가능
+			하루 : .yyyy-MM-dd
+			시간 : .yyyy-MM-dd-HH
+			분 : .yyyy-MM-dd-HH-mm
+			DatePattern의 value에 수정하면 반영됨
+		-->
+	   	<layout class="org.apache.log4j.PatternLayout">
+	  		<param name="ConversionPattern" value="%d %5p [%c] %m%n" />
+	  	</layout>
+    </appender>
+    
+    <!-- DB 저장 부분 -->
+    <appender name="db" class="kr.or.ddit.utils.MyJdbcAppender">
+		<!-- JDBC Driver를 정의하기 위한 parameter -->
+    	<param name="Driver" value="oracle.jdbc.driver.OracleDriver" />
+    	
+		<!-- DB URL을 정의하기 위한 parameter -->
+    	<param name="URL" value="jdbc:oracle:thin:@112.220.114.130:1521:xe" />
+    	
+		<!-- DB User를 정의하기 위한 parameter -->
+    	<param name="User" value="team3_202109f" />
+    	
+		<!-- DB password를 정의하기 위한 parameter -->
+    	<param name="Password" value="java" />
+    	
+		<!-- 로그를 남길 때 수행할 쿼리를 정의하기 위한 parameter -->
+    	<param name="Sql" value="INSERT INTO TBL_LOG(MSG) VALUES('[%p] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %m%n')" />
+    </appender>
+	
+	<!-- Application Loggers -->
+	<logger name="kr.or.ddit">
+		<!-- 예를 들어 출력 레벨을 info라고 설정했다면, info를 포함한 info보다 높은 레벨인 warn, error이 출력된다. -->
+		<level value="debug" />
+	</logger>
+	
+	<!-- 3rdparty Loggers -->
+	<logger name="org.springframework.core">
+		<level value="info" />
+	</logger>	
+	
+	<logger name="org.springframework.beans">
+		<level value="info" />
+	</logger>
+	
+	<logger name="org.springframework.context">
+		<level value="info" />
+	</logger>
+
+	<logger name="org.springframework.web">
+		<level value="info" />
+	</logger>
+
+	<!-- 쿼리 로그 -->
+    <logger name="jdbc.sqlonly" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="console" />
+        <appender-ref ref="rollingAppender" />
+    </logger>
+    <logger name="jdbc.resultsettable" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="jdbc.sqltiming" additivity="false">
+        <level value="INFO" />
+<!--         <appender-ref ref="console"/>  -->
+    </logger>
+    <logger name="jdbc.resultset" additivity="false">
+        <level value="DEBUG" />
+    </logger>
+    <logger name="jdbc.audit" additivity="false">
+        <level value="DEBUG" />
+    </logger> 
+    
+
+	<!-- Root Logger -->
+	<root>
+		<priority value="info" />
+		
+		<!-- 콘솔로 출력 -->
+		<appender-ref ref="console" />
+		
+		<!-- 파일로 저장 -->
+		<appender-ref ref="file" />
+		
+		<!-- DB로 저장 -->
+		<appender-ref ref="db" />
+	</root>
+	
+</log4j:configuration>

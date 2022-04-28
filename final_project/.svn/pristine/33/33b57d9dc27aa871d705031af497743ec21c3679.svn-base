@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  
+	<mapper namespace="kr.or.ddit.receive.mapper.ReceiveMapper">
+	
+	<!-- 수납 대기 리스트 -->
+		<select id="getReceivePatient" resultType="entVO" parameterType="hashMap">
+			SELECT *
+            FROM (SELECT ROW_NUMBER() OVER (ORDER BY PNT_CD) RNUM
+				  		,PNT_CD
+			    	    ,PNT_NM
+			    	    ,PNT_PRNO
+			    	    ,PNT_SEX
+			    	    ,PNT_ADDR
+			 	        ,PNT_HP
+			  	        ,CHR_DR
+			    	    ,HEIGHT
+			    	    ,WEIGHT
+			    	    ,SMK_YN
+			    	    ,DRK_YN
+			    	    ,PRGNT_YN
+			    	    ,STATE_CD
+			    	    ,PRTCR_NM
+			    	    ,PRTCR_TEL
+			    	    ,PNT_REG_DT
+			    	    ,DEL_YN
+			    	    ,ENABLED
+			    	    ,LOC_CD
+			    	    ,ENT_YN 
+			    	FROM PATIENT
+			    WHERE STATE_CD = 'PS6'
+			    <if test="keyword != null and keyword != ''">
+			    	AND PNT_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+			    ) T
+		  WHERE T.RNUM BETWEEN #{start} AND #{end}
+		</select>
+		
+		<!-- 수납 대기자 명수 카운트 -->
+		<select id="getReceivePatientCount" resultType="int" parameterType="String">
+          	 SELECT COUNT(PNT_CD)
+			   FROM PATIENT
+			  WHERE STATE_CD = 'PS6'
+		     <if test="keyword != null and keyword != ''">
+		     AND PNT_NM LIKE '%'||#{keyword}||'%'
+		     </if>
+		</select>
+		
+		<!-- 수납 완료자 리스트 -->
+		<select id="getReceiveCommitPatient" resultType="entVO" parameterType="hashMap">
+			SELECT *
+            FROM (SELECT ROW_NUMBER() OVER (ORDER BY PNT_CD) RNUM
+				  		,PNT_CD
+			    	    ,PNT_NM
+			    	    ,PNT_PRNO
+			    	    ,PNT_SEX
+			    	    ,PNT_ADDR
+			 	        ,PNT_HP
+			  	        ,CHR_DR
+			    	    ,HEIGHT
+			    	    ,WEIGHT
+			    	    ,SMK_YN
+			    	    ,DRK_YN
+			    	    ,PRGNT_YN
+			    	    ,STATE_CD
+			    	    ,PRTCR_NM
+			    	    ,PRTCR_TEL
+			    	    ,PNT_REG_DT
+			    	    ,DEL_YN
+			    	    ,ENABLED
+			    	    ,LOC_CD
+			    	    ,ENT_YN 
+			    	FROM PATIENT
+			    WHERE STATE_CD = 'PS7'
+			    <if test="keyword != null and keyword != ''">
+			    	AND PNT_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+			    ) T
+		  WHERE T.RNUM BETWEEN #{start} AND #{end}
+		</select>
+		
+		<!-- 수납 완료자 카운트 -->
+		<select id="getReceiveCommitPatientCount" resultType="int" parameterType="String">
+          	 SELECT COUNT(PNT_CD)
+			   FROM PATIENT
+			  WHERE STATE_CD = 'PS7'
+		     <if test="keyword != null and keyword != ''">
+		     AND PNT_NM LIKE '%'||#{keyword}||'%'
+		     </if>
+		</select>
+		
+	</mapper>

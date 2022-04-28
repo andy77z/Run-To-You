@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.emp.mapper.EmpMapper">
+
+	<!-- 전체 직원 조회 -->
+	<select id="selectAll" resultType="empVO">
+		 SELECT EMP_CD,SEC_CD,EMP_NM,EMP_PRNO,EMP_SEX,EMP_ADDR,EMP_HP,POSITION,LCNS_NO,EMP_PIC,STATE_CD
+   				,HIRE_DATE,LEAVE_YN,ENABLED,EMP_MAIL,EMP_PW
+		   FROM EMP
+	</select>	
+	
+	<!-- 전체 직원 리스트에 출력(상태,성별 변환해서) -->
+	<select id="selectDept" parameterType="hashMap" resultType="empVO">
+		 SELECT  T.emp_cd,T.sec_cd,T.emp_nm,T.emp_prno, T.emp_sex,T.emp_addr,T.emp_hp,T.position,T.lcns_no
+		 		,T.emp_pic,T.state_cd, T.hire_date,T.leave_yn,T.enabled,T.emp_mail,T.emp_pw,T.sec_nm,o.oper_bgn_tm
+	      FROM (SELECT ROW_NUMBER() OVER(ORDER BY EMP_CD) RNUM, a.emp_cd,a.sec_cd,a.emp_nm,a.emp_prno
+				   ,CASE a.emp_sex
+	      				WHEN 'F' THEN '여'
+	      				WHEN 'M' THEN '남'
+	      			END AS emp_sex
+	   			   ,a.emp_addr,a.emp_hp,a.position,a.lcns_no,a.emp_pic
+	   			   ,CASE a.state_cd
+					    WHEN 'ES0' THEN '최초로그인'
+					    WHEN 'ES1' THEN '온라인'
+					    WHEN 'ES2' THEN '업무중'
+					    WHEN 'ES3' THEN '진료중'
+					    WHEN 'ES4' THEN '수술중'
+					    WHEN 'ES5' THEN '자리비움'
+					    WHEN 'ES6' THEN '오프라인'
+					END AS state_cd
+	   			   ,a.hire_date,a.leave_yn,a.enabled,a.emp_mail,a.emp_pw,b.sec_nm
+			FROM emp A, SEC B
+			WHERE A.SEC_CD = B.SEC_CD
+            <if test="secCd!=null and secCd!=''">
+				AND A.SEC_CD = #{secCd}
+			</if>
+            <if test="keyword!=null and keyword!=''">
+		       AND    (a.emp_cd LIKE '%'||#{keyword}||'%'
+	          		OR     a.sec_cd LIKE '%'||#{keyword}||'%'
+	          		OR     a.emp_nm LIKE '%'||#{keyword}||'%'
+	          		OR     a.emp_sex LIKE '%'||#{keyword}||'%'
+	          		OR     a.emp_addr LIKE '%'||#{keyword}||'%'
+	         		OR     a.emp_hp LIKE '%'||#{keyword}||'%'
+	         		OR     a.position LIKE '%'||#{keyword}||'%')
+		    </if>
+			ORDER BY A.EMP_NM
+            ) T LEFT OUTER JOIN(
+                SELECT A.OPER_BGN_TM,B.EMP_NM,A.EMP_CD
+                  FROM OPERATION A,EMP B
+                  WHERE A.EMP_CD = B.EMP_CD
+                    AND A.OPER_BGN_TM IS NOT NULL AND A.OPER_END_TM IS NULL) O
+                    ON T.EMP_CD = O.EMP_CD
+	        	 WHERE T.RNUM BETWEEN #{start} AND #{end}
+			
+	</select>
+	
+	<select id="listCount" parameterType="String" resultType="int">
+	SELECT COUNT(EMP_CD)
+		FROM   EMP 
+		<if test="keyWord!=null and keyWord!=''">
+	          WHERE  (emp_cd LIKE '%'||#{keyWord}||'%'
+	          OR     sec_cd LIKE '%'||#{keyWord}||'%'
+	          OR     emp_nm LIKE '%'||#{keyWord}||'%'
+	          OR     emp_sex LIKE '%'||#{keyWord}||'%'
+	          OR     emp_addr LIKE '%'||#{keyWord}||'%'
+	          OR     emp_hp LIKE '%'||#{keyWord}||'%'
+	          OR     position LIKE '%'||#{keyWord}||'%')
+	    </if>
+	</select>
+	
+	<!-- 직원 상세정보 조회 -->
+	<select id="selectOne" parameterType="String" resultType="empVO">
+		SELECT a.emp_cd,a.sec_cd,a.emp_nm,a.emp_prno
+			   ,CASE a.emp_sex
+      				WHEN 'F' THEN '여'
+      				WHEN 'M' THEN '남'
+      			END AS emp_sex
+   			   ,a.emp_addr,a.emp_hp,a.position,a.lcns_no,a.emp_pic
+   			   ,CASE a.state_cd
+				    WHEN 'ES0' THEN '최초로그인'
+				    WHEN 'ES1' THEN '온라인'
+				    WHEN 'ES2' THEN '업무중'
+				    WHEN 'ES3' THEN '자리비움'
+				    WHEN 'ES4' THEN '진료중'
+				    WHEN 'ES5' THEN '수술중'
+				    WHEN 'ES6' THEN '오프라인'
+				END AS state_cd
+   			   ,a.hire_date,a.leave_yn,a.emp_mail,a.emp_pw,b.sec_nm
+		FROM emp A, SEC B
+		WHERE A.SEC_CD = B.SEC_CD
+		  AND EMP_CD=#{empCd} 
+	</select>
+	
+	<!-- 직원 등록 시, 최대 직원코드값 +1 구하기 -->
+	<select id="nextEmpCD" resultType="String">
+		SELECT LPAD(NVL(TO_NUMBER(SUBSTR(EMP_CD,4,5)),0)+1,5,0) AS NEXT_CD
+		  FROM EMP
+		 WHERE EMP_CD = (SELECT MAX(EMP_CD) FROM EMP WHERE EMP_CD!='admin1')
+	</select>	   
+	
+	<!-- 직원 등록 -->
+	<insert id="create" parameterType="empVO">
+		INSERT INTO EMP (EMP_CD,SEC_CD,EMP_NM,POSITION,LCNS_NO,STATE_CD,EMP_PW,EMP_PIC)
+			 VALUES (
+			 #{empCd},#{secCd},NULL,#{position}
+			 ,'LC'||to_char(lpad(LCNS_NO_SEQ.nextval,'4',0)),'ES0',#{empPw}
+			 ,'/resources/upload/empPic/기본프로필.png'
+        	 )
+	</insert>
+	
+	<insert id="insertDoctor" parameterType="empVO">
+		INSERT INTO DOCTOR	
+		VALUES(#{empCd},#{major})
+	</insert>
+	
+	<insert id="insertNurse" parameterType="empVO">
+		INSERT INTO NURSE	
+		VALUES(#{empCd},#{position})
+	</insert>
+	
+	<insert id="insertNMdlTeam" parameterType="empVO">
+		INSERT INTO N_MDL_TEAM	
+		VALUES(#{empCd},#{position})
+	</insert>
+	
+	<!-- 직원 삭제 -->
+	<delete id="delete" parameterType="string">
+		DELETE FROM EMP WHERE EMP_CD = #{empCd}
+	</delete>
+	
+	
+	    
+<!-- 직원 수정 -->
+	<update id="update" parameterType="empVO">
+		 UPDATE emp
+    		SET sec_cd = #{secCd}
+		    	,emp_nm = #{empNm}
+		    	,emp_prno = #{empPrno}
+		    	,emp_sex = #{empSex}
+		    	,emp_addr = #{empAddr}
+		    	,emp_hp = #{empHp}
+		    	,position = #{position}
+		    	,lcns_no = #{lcnsNo}
+		    	,hire_date = #{hireDate}
+		    	,leave_yn = #{leaveYn}
+		    	,emp_mail = #{empMail}
+		    	,emp_pw = #{empPw}
+		  WHERE emp_cd = #{empCd}	
+	</update>
+	
+<!-- 직원정보 수정 시 프로필 사진 수정 -->	
+	<update id="updateImg" parameterType="empVO">
+		UPDATE EMP 
+  		   SET EMP_PIC = #{empPic}
+ 		 WHERE EMP_CD = #{empCd} 
+	</update>
+	 
+	 <!-- 마이프로필 기본정보 수정 -->
+	 <update id="basicModify" parameterType="empVO">
+	 	UPDATE EMP
+	 	   SET EMP_HP=#{empHp}
+	 	      ,EMP_MAIL=#{empMail}
+	 	      ,EMP_ADDR=#{empAddr}
+	 	      ,LCNS_NO=#{lcnsNo}
+	 	      <if test="empPic != null and empPic != ''">
+		       	,EMP_PIC=#{empPic}
+		      </if>
+	 	 WHERE EMP_CD=#{empCd}
+	 </update>
+	 
+	 <!-- 비밀번호 변경 -->
+	 <update id="pwModify" parameterType="empVO">
+	 	UPDATE EMP
+	 	   SET EMP_PW=#{empPw}
+	 	 WHERE EMP_CD=#{empCd}
+	 </update>
+	 
+	 <!-- 헤더 직원 셀렉트박스 가져오기 -->
+	 <select id="secSelectBox" resultType="empVO">
+	 	SELECT SEC_CD,SEC_NM
+	 	  FROM SEC
+	 </select>
+	 
+	 <!-- 해당 과 직원정보 가져오기 -->
+	 <select id="mySecEmpInfo" parameterType="empVO" resultType="empVO">
+	 	SELECT E.EMP_CD,E.EMP_NM,E.EMP_HP,E.EMP_MAIL,
+	 		   E.POSITION,E.EMP_PIC,E.STATE_CD,C.CD_NM,E.SEC_CD,S.SEC_NM
+		  FROM EMP E, SEC S, CM_CD C
+		 WHERE E.SEC_CD=S.SEC_CD
+		   AND E.STATE_CD=C.CM_CD
+		   AND S.SEC_CD=#{secCd}
+		   AND E.EMP_CD != #{empCd}
+		   AND C.CM_CD!='ES0'
+		 ORDER BY E.STATE_CD
+	 </select>
+	 
+</mapper>

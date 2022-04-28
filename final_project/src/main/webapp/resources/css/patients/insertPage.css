@@ -1,0 +1,32 @@
+@charset "UTF-8";
+
+input[type=text] {
+ 	  border: 2px solid gainsboro;
+ 	  border-radius: 5px;
+ 	  height: 30px;
+   }
+   .pno {
+   	width: 10%;
+   }
+   .range{
+   	width: 47%; 
+   	
+   	float: left;
+   	margin-left: 20px;
+   }
+   .main_common{
+   	display: inline-block;
+   	width: 350px;
+}
+#optd{
+	width: 100px;
+}
+li {
+   	margin-t: 20px;
+   	margin-left: 20px;
+}
+.inpstyle{
+	border: 2px solid gainsboro;
+    border-radius: 5px;
+    height: 30px;
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.webcam.mapper.SnapImgMapper">
+	<insert id="insertSnapImg" parameterType="kr.or.ddit.webcam.vo.SnapImgVO">
+		INSERT INTO CHART_FILE	
+		VALUES(#{treatCd},#{fileNo},#{fileNm},#{filePath}
+			  ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),#{empCd},#{fileCls})
+	</insert>
+	
+	
+	<select id="snapLog" parameterType="map" resultType="kr.or.ddit.webcam.vo.SnapImgVO">
+		SELECT TREAT_CD
+		      ,FILE_NO
+		      ,FILE_NM
+		      ,FILE_PATH
+		      ,FILE_REG_DT
+		      ,EMP_CD
+		      ,FILE_CLS
+		  FROM CHART_FILE
+		 WHERE TREAT_CD=#{treatCd}
+	</select>
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+  
+<configuration>
+<!--
+	[마이바티스]
+	스프링에서 "_"를 사용한 컬럼명을 사용 시 테이블 컬럼명에 "_"가 있을 경우 카멜케이스로 읽어줌
+	member 테이블 컬럼명이 mem_id일 경우 memId로 사용 가능하도록 도와줌
+	cart 테이블에 cart_prod -> cartProd
+-->
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+		<setting name="cacheEnabled" value="false" /> 
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+	
+	<!-- 자주 사용하는 타입의 별칭 -->
+	<typeAliases>
+		<typeAlias type="kr.or.ddit.medical.vo.MedicalVo" alias="medicalVo" />
+		<typeAlias type="kr.or.ddit.patients.vo.PatientsVO" alias="patientsVo" />
+		<typeAlias type="kr.or.ddit.patients.vo.PatientsEmpVO" alias="patientsempVo" />
+		<typeAlias type="kr.or.ddit.reservation.vo.ReservationVO" alias="reservationVo" />
+		<typeAlias type="kr.or.ddit.ent.vo.EntVO" alias="entVO" />
+		<typeAlias type="kr.or.ddit.ent.vo.EntNotiVO" alias="entNotiVO" />
+		<typeAlias type="kr.or.ddit.emp.vo.EmpVO" alias="empVO" />
+		<typeAlias type="kr.or.ddit.notice.vo.NoticeVO" alias="noticeVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.OperationVO" alias="operationVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.ChartVO" alias="chartVO"/>
+		<typeAlias type="kr.or.ddit.operation.vo.OperDetailVO" alias="operDetailVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.PatientVO" alias="patientVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.PntVSVO" alias="pntVSVO" />
+		<typeAlias type="kr.or.ddit.sec.vo.SecVO" alias="secVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.OperTeamVO" alias="operTeamVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.SgCodeVO" alias="sgCodeVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.OperReservationVO" alias="operReservationVO" />
+		<typeAlias type="kr.or.ddit.operation.vo.TreatVO" alias="treatVO" />
+		<typeAlias type="kr.or.ddit.drug.vo.DrugVO" alias="drugVO" />
+		<typeAlias type="kr.or.ddit.stats.vo.StatsVO" alias="statsVO" />
+		<typeAlias type="kr.or.ddit.inject.vo.InjectVO" alias="injectVO" />
+		<typeAlias type="kr.or.ddit.receive.vo.ReceiveVO" alias="receiveVO" />
+		<typeAlias type="kr.or.ddit.inspection.vo.InspectionVO" alias="inspectionVO" />
+		<typeAlias type="kr.or.ddit.medical.vo.MedicalSchVo" alias="medicalSchVo" />
+		<typeAlias type="kr.or.ddit.medical.vo.MedicalVitalSignVo" alias="medicalVitalSignVo" />
+		<typeAlias type="kr.or.ddit.medical.vo.MedicalTreatVo" alias="medicalTreatVo" />
+		<typeAlias type="kr.or.ddit.medical.vo.MedicalRecordVo" alias="medicalRecordVo"/>
+		<typeAlias type="kr.or.ddit.medical.vo.CmntVO" alias="cmntVo" />
+		<typeAlias type="kr.or.ddit.medical.vo.PrescriptionVO" alias="prescriptionVo" />
+	</typeAliases>
+
+	
+</configuration>

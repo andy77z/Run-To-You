@@ -1,0 +1,607 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.operation.mapper.OperationMapper">
+	<resultMap type="kr.or.ddit.operation.vo.OperationVO" id="operRoomMap">
+		<id property="opRoomNo" column="OP_ROOM_NO"/>
+		<result property="opRoomState" column="OP_ROOM_STATE"/>
+		<result property="operCd" column="OPER_CD"/>
+		<result property="empNm" column="EMP_NM"/>
+		<result property="operYmd" column="OPER_YMD"/>
+		<result property="operBgnTm" column="OPER_BGN_TM"/>
+		<result property="operEndTm" column="OPER_END_TM"/>
+		<result property="operIng" column="OPERING"/>
+		<result property="pntCd" column="PNT_CD"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<collection property="opcList" resultMap="opcMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.operation.vo.OpcVO" id="opcMap">
+		<id property="operCd" column="OPER_CD"/>
+		<id property="opcNo" column="OPC_NO"/>
+		<result property="opcCd" column="OPC_CD"/>
+		<result property="opcNm" column="OPC_NM"/>
+		<result property="opcAmt" column="OPC_AMT"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.operation.vo.OperationVO" id="operationMap">
+		<id property="operCd" column="OPER_CD"/>
+		<result property="treatCd" column="TREAT_CD"/>
+		<result property="empCd" column="EMP_CD"/>
+		<result property="pntCd" column="PNT_CD"/>
+		<result property="opRoomNo" column="OP_ROOM_NO"/>
+		<result property="operYmd" column="OPER_YMD"/>
+		<result property="operBgnTm" column="OPER_BGN_TM"/>
+		<result property="operEndTm" column="OPER_END_TM"/>
+		<result property="operRecYn" column="OPER_REC_YN"/>
+		<result property="digCls" column="DIG_CLS"/>
+		<result property="operEndTm" column="OPER_END_TM"/>
+		<collection property="opcVO" resultMap="opcMap"></collection>
+		<collection property="PatientVO" resultMap="patientMap"></collection>
+		<collection property="EmpVO" resultMap="empMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.operation.vo.PatientVO" id="patientMap">
+		<id property="pntCd" column="PNT_CD"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<result property="pntPrno" column="PNT_PRNO"/>
+		<result property="pntSex" column="PNT_SEX"/>
+		<result property="pntAddr" column="PNT_ADDR"/>
+		<result property="pntHp" column="PNT_HP"/>
+		<result property="chrDr" column="CHR_DR"/>
+		<result property="height" column="HEIGHT"/>
+		<result property="weight" column="WEIGHT"/>
+		<result property="smkYn" column="SMK_YN"/>
+		<result property="drkYn" column="DRK_YN"/>
+		<result property="prgntYn" column="PRGNT_YN"/>
+		<result property="stateCd" column="STATE_CD"/>
+		<result property="prtcrNm" column="PRTCR_NM"/>
+		<result property="prtcrTel" column="PRTCR_TEL"/>
+		<result property="pntRegDt" column="PNT_REG_DT"/>
+		<result property="delYn" column="DEL_YN"/>
+		<result property="enabled" column="ENABLED"/>
+		<result property="locCd" column="LOC_CD"/>
+		<result property="entYn" column="ENT_YN"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.emp.vo.EmpVO" id = "empMap">
+		<id property="empCd" column="EMP_CD"/>
+		<result property="secCd" column="SEC_CD"/>
+		<result property="empNm" column="EMP_NM"/>
+		<result property="empPrno" column="EMP_PRNO"/>
+		<result property="empSex" column="EMP_SEX"/>
+		<result property="empAddr" column="EMP_ADDR"/>
+		<result property="empHp" column="EMP_HP"/>
+		<result property="position" column="POSITION"/>
+		<result property="lcnsNo" column="LCNS_NO"/>
+		<result property="empPic" column="EMP_PIC"/>
+		<result property="stateCd" column="STATE_CD"/>
+		<result property="hireDate" column="HIRE_DATE"/>
+		<result property="leaveYn" column="LEAVE_YN"/>
+		<result property="enabled" column="ENABLED"/>
+		<result property="empMail" column="EMP_MAIL"/>
+		<result property="empPw" column="EMP_PW"/>
+		<result property="pwUuid" column="PW_UUID"/>
+	</resultMap>
+	<resultMap type="kr.or.ddit.operation.vo.SgCodeVO" id="sgCodeMap">
+		<id property="sgCd" column="SG_CD"/>
+		<result property="sgNm" column="SG_NM"/>
+		<result property="sgAmt" column="SG_AMT"/>
+	</resultMap>
+
+	 <!-- 진료목록 -->
+	 <select id="selectOperList" resultMap="operRoomMap">
+	   SELECT O.OP_ROOM_NO
+	   		, O.OP_ROOM_STATE
+	   		, T.OPER_CD
+	   		, T.EMP_NM
+	   		, T.OPER_YMD
+	   		, T.OPER_BGN_TM
+	   		, T.OPER_END_TM
+	   		, T.OPERING
+	   		, T.OPC_NM
+	   		, T.PNT_CD
+	   		, T.PNT_NM
+	   		, T.OPC_NO
+	   		, T.OPC_CD
+	   		, T.OPC_AMT
+         FROM OPER_ROOM O LEFT OUTER JOIN (SELECT D.OPER_CD
+                                                  , D.OP_ROOM_NO
+                                                  , D.EMP_NM
+                                                  , D.OPER_YMD
+                                                  , D.OPER_BGN_TM
+                                                  , D.OPER_END_TM
+                                                  , D.OPERING
+                                                  , D.OPC_NM
+                                                  , D.PNT_CD
+                                                  , D.PNT_NM
+                                                  , D.OPC_NO
+                                                  , D.OPC_CD
+                                                  , D.OPC_AMT
+                                             FROM
+                                                (
+                                                SELECT A.OPER_CD
+                                                       , A.OP_ROOM_NO
+                                                       , C.EMP_NM
+                                                       , A.OPER_YMD
+                                                       , A.OPER_BGN_TM
+                                                       , A.OPER_END_TM
+                                                       , CASE WHEN SYSDATE BETWEEN TO_DATE(A.OPER_BGN_TM,'YYYY/MM/DD HH24:MI:SS') AND TO_DATE(A.OPER_END_TM,'YYYY/MM/DD HH24:MI:SS') THEN 'Y'
+                                                            ELSE 'N'
+                                                             END operIng
+                                                       , B.OPC_NM
+                                                       , B.OPC_NO
+                                                       , B.OPC_CD
+                                                       , B.OPC_AMT
+                                                       , P.PNT_CD
+                                                       , P.PNT_NM
+                                                  FROM OPERATION A, OPER_PROC B, EMP C, PATIENT P
+                                                 WHERE C.EMP_CD = A.EMP_CD 
+                                                   AND A.PNT_CD = P.PNT_CD
+                                                   AND A.OPER_CD = B.OPER_CD) D
+                                                 WHERE OPERING = 'Y') T
+                                                    ON (O.OP_ROOM_NO = T.OP_ROOM_NO)
+	 </select>
+	
+	 <select id="operChart" resultType="chartVO">
+<!-- 		SELECT TBLB.OP_ROOM_NO, -->
+<!-- 		       TBLA.PNT_NM, -->
+<!-- 		       TBLA.OPER_BGN_TM, -->
+<!-- 		       TBLA.OPER_END_TM, -->
+<!-- 		       TBLA.OPC_NM, -->
+<!-- 		       TBLA.CHARTSTART, -->
+<!-- 		       TBLA.CHARTEND, -->
+<!-- 		       TBLA.OPER_ING -->
+<!-- 		  FROM (SELECT TA.OP_ROOM_NO, -->
+<!-- 		               TB.PNT_NM, -->
+<!-- 		               TA.OPER_BGN_TM, -->
+<!-- 		               TA.OPER_END_TM, -->
+<!-- 		               TA.OPC_NM, -->
+<!-- 		               TA.CHARTSTART, -->
+<!-- 		               TA.CHARTEND, -->
+<!-- 		               TA.OPER_ING -->
+<!-- 		          FROM (SELECT A.OP_ROOM_NO, -->
+<!-- 		                       B.PNT_CD, -->
+<!-- 		                       B.OPER_BGN_TM, -->
+<!-- 		                       B.OPER_END_TM, -->
+<!-- 		                       (TO_NUMBER(SUBSTR(B.OPER_BGN_TM,9,2)*60)+TO_NUMBER(SUBSTR(B.OPER_BGN_TM,11,2)))/60 as ChartStart, -->
+<!-- 		                       (TO_NUMBER(SUBSTR(B.OPER_END_TM,9,2)*60)+TO_NUMBER(SUBSTR(B.OPER_END_TM,11,2)))/60 as ChartEnd, -->
+<!-- 		                       CASE WHEN SYSDATE BETWEEN TO_DATE(B.OPER_BGN_TM,'YYYY/MM/DD HH24:MI:SS') AND TO_DATE(B.OPER_END_TM,'YYYY/MM/DD HH24:MI:SS') THEN 'Y' -->
+<!-- 		                       ELSE 'N' -->
+<!-- 		                        END OPER_ING, -->
+<!-- 		                       C.OPC_NM -->
+<!-- 		                  FROM OPER_ROOM A,OPERATION B, OPER_PROC C -->
+<!-- 		                 WHERE A.OP_ROOM_NO=B.OP_ROOM_NO -->
+<!-- 		                   AND B.OPER_CD=C.OPER_CD -->
+<!-- 		                   AND SUBSTR(B.OPER_BGN_TM,1,8)=TO_CHAR(SYSDATE,'YYYYMMDD')) TA,  -->
+<!-- 		               (SELECT A.PNT_CD, -->
+<!-- 		                       A.PNT_NM -->
+<!-- 		                  FROM PATIENT A, OPERATION B -->
+<!-- 		                 WHERE A.PNT_CD=B.PNT_CD -->
+<!-- 		                   AND SUBSTR(B.OPER_BGN_TM,1,8)=TO_CHAR(SYSDATE,'YYYYMMDD')) TB -->
+<!-- 		         WHERE TB.PNT_CD=TA.PNT_CD) TBLA, OPER_ROOM TBLB      -->
+<!-- 		 WHERE TBLA.OP_ROOM_NO(+)=TBLB.OP_ROOM_NO -->
+<!-- 		 ORDER BY 1, 3 -->
+		SELECT TBLB.OP_ROOM_NO,
+		       TA.PNT_NM,
+		       TA.OPER_BGN_TM,
+		       TA.OPER_END_TM,
+		       TA.OPC_NM,
+		       TA.CHARTSTART,
+		       TA.CHARTEND,
+		       TA.OPER_ING,
+		       TA.OPER_CD,
+		       TA.PNT_CD
+		  FROM (SELECT A.OP_ROOM_NO,
+		               B.PNT_CD,
+		               P.PNT_NM,
+		               B.OPER_BGN_TM,
+		               B.OPER_END_TM,
+		               B.OPER_CD,
+		               (TO_NUMBER(SUBSTR(B.OPER_BGN_TM,9,2)*60)+TO_NUMBER(SUBSTR(B.OPER_BGN_TM,11,2)))/60 as ChartStart,
+		               (TO_NUMBER(SUBSTR(B.OPER_END_TM,9,2)*60)+TO_NUMBER(SUBSTR(B.OPER_END_TM,11,2)))/60 as ChartEnd,
+		               CASE WHEN SYSDATE BETWEEN TO_DATE(B.OPER_BGN_TM,'YYYY/MM/DD HH24:MI:SS') AND TO_DATE(B.OPER_END_TM,'YYYY/MM/DD HH24:MI:SS') THEN 'Y'
+		               ELSE 'N'
+		                END OPER_ING,
+		               C.OPC_NM
+		          FROM OPER_ROOM A,OPERATION B, OPER_PROC C,PATIENT P
+		         WHERE A.OP_ROOM_NO=B.OP_ROOM_NO
+		           AND B.OPER_CD=C.OPER_CD
+		           AND B.PNT_CD = P.PNT_CD
+		           AND SUBSTR(B.OPER_BGN_TM,1,8)=TO_CHAR(SYSDATE,'YYYYMMDD')) TA, OPER_ROOM TBLB 
+		 WHERE TA.OP_ROOM_NO(+)=TBLB.OP_ROOM_NO
+		 ORDER BY 1, 3
+	 </select>
+	 <select id="pntInfo" resultType="operDetailVO" parameterType="String">
+	 	   SELECT P.PNT_CD
+	 	 	  , P.PNT_NM
+              , P.PNT_PRNO
+              , P.PNT_SEX
+              , P.PNT_ADDR
+              , P.PNT_HP 
+              , P.CHR_DR
+              , CASE WHEN P.SMK_YN = 0 THEN 'N'
+                      WHEN P.SMK_YN = 1 THEN 'Y'  END AS SMOKING
+              , CASE WHEN P.DRK_YN = 0 THEN 'N'
+                      WHEN P.DRK_YN = 1 THEN 'Y' END AS DRINKING
+              , CASE WHEN P.PRGNT_YN = 0 THEN 'N'
+                      WHEN P.PRGNT_YN = 1 THEN 'Y' END AS PREGNANCY
+              , P.STATE_CD
+              , P.PRTCR_NM
+              , P.PRTCR_TEL
+              , P.PNT_REG_DT
+              , P.DEL_YN
+              , P.ENABLED
+              ,(SELECT TRUNC(MONTHS_BETWEEN(TRUNC(SYSDATE), TO_DATE(T.BYEAR,'YYYYMMDD')) / 12) 
+                  FROM (SELECT CASE 
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='1' OR SUBSTR(PNT_PRNO,8,1)='2' THEN TO_NUMBER('19'||SUBSTR(PNT_PRNO,1,6))
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='3' OR SUBSTR(PNT_PRNO,8,1)='4' THEN TO_NUMBER('20'||SUBSTR(PNT_PRNO,1,6))
+                              END AS BYEAR
+                             , PNT_CD
+                       FROM PATIENT)T
+                 WHERE T.PNT_CD=#{pntCd}) AS AGE
+              ,V.HEIGHT
+              ,V.WEIGHT
+           FROM PATIENT P, (SELECT HEIGHT
+                                  ,WEIGHT
+                                  ,PNT_CD
+                              FROM VS
+                             WHERE PNT_CD =#{pntCd}
+                               AND VS_DT = (SELECT MAX(VS_DT) FROM VS WHERE PNT_CD =#{pntCd})) V
+      	  WHERE P.PNT_CD =#{pntCd}
+            AND P.PNT_CD = V.PNT_CD(+)
+	 </select>
+	 <select id="pntSearch" resultType="operDetailVO" parameterType="String">
+	 	SELECT PNT_CD, PNT_NM, PNT_PRNO, PNT_SEX, PNT_ADDR, PNT_HP
+    	  FROM PATIENT
+   	     WHERE 1=1 
+   	     <if test="keyword!=null and keyword !=''"> 
+    	   AND (PNT_NM LIKE '%' || #{keyword} || '%')
+    	 </if>
+	 </select>
+	 <select id="operPntInfo" resultType="operDetailVO" parameterType="String">
+	 	SELECT P.PNT_NM
+	          ,P.PNT_PRNO
+              ,P.PNT_SEX
+              ,V.HEIGHT
+      		  ,V.WEIGHT
+      		  ,OC.OPC_NM      
+  		 FROM OPERATION O, PATIENT P, OPER_PROC OC, VS V
+ 	    WHERE O.OPC_CD = OC.OPC_CD 
+          AND O.PNT_CD = P.PNT_CD
+          AND P.PNT_CD = V.PNT_CD
+          AND O.OPER_CD = #{operCd}
+	 </select>
+	 <select id="operPntVS" resultType="operDetailVO" parameterType="String">
+	 	SELECT B.PNT_NM
+      		  ,B.VS_DT
+      		  ,B.VS_BP_MAX
+      		  ,B.VS_BP_MIN
+      		  ,B.VS_TMP
+      		  ,B.VS_BS
+      		  ,B.YMD
+  		  FROM (SELECT P.PNT_NM
+     				  ,V.VS_DT
+      		  		  ,V.VS_BP_MAX
+      		  		  ,V.VS_BP_MIN
+      		  		  ,V.VS_TMP
+      	 	  		  ,V.VS_BS
+              		  ,TO_NUMBER(SUBSTR(V.VS_DT,1,4)||SUBSTR(V.VS_DT,6,2)||SUBSTR(V.VS_DT,9,2)) AS YMD
+  		 		  FROM  PATIENT P, VS V 
+ 				 WHERE P.PNT_CD = V.PNT_CD
+ 		  		   AND V.PNT_CD = #{pntCd}
+        		 ORDER BY YMD DESC)B
+ 		 WHERE <![CDATA[ROWNUM <= 5]]>
+ 		 ORDER BY YMD
+   		  
+	 </select>
+	 <select id="operPntInj" resultType="operDetailVO" parameterType="String">
+	 	SELECT D.DRUG_NM
+      	      ,I.DOSAGE
+      	      ,I.INJ_DT
+          FROM DRUG D , INJECT I, PATIENT P
+         WHERE I.DRUG_CD = D.DRUG_CD
+           AND I.PNT_CD = P.PNT_CD
+           AND P.PNT_CD = #{pntCd}
+	 </select>
+	 <select id="operIns" resultType="operDetailVO" parameterType="String">
+<!-- 		SELECT IT.INSP_NM            -->
+<!--               ,P.PNT_NM -->
+<!--               ,I.INSP_DT -->
+<!--           FROM INSP_TYPE IT,PATIENT P,TREAT T, INSPECTION I -->
+<!--  		 WHERE P.PNT_CD = T.PNT_CD -->
+<!--    		   AND T.TREAT_CD = I.TREAT_CD -->
+<!--    	       AND I.INSP_TYPE_CD = IT.INSP_TYPE_CD -->
+<!--            AND P.PNT_CD = #{pntCd} -->
+			SELECT I.INSP_DT
+                  ,P.PNT_NM
+                  ,S.SG_NM
+              FROM INSPECTION I, PATIENT P, TREAT T, SG_CD S
+             WHERE P.PNT_CD = T.PNT_CD
+               AND T.TREAT_CD = I.TREAT_CD
+               AND I.SG_CD = S.SG_CD
+               AND P.PNT_CD = #{pntCd}
+	 </select>
+	 <select id="operTeam" resultType="operDetailVO" parameterType="String">
+	 	SELECT E.EMP_NM
+	 	      ,E.SEC_CD
+	 	      ,S.SEC_NM
+	 	      ,S.DEPT_NM
+	 	      ,O.OPER_CD
+  	     FROM EMP E, OPERATION O, OPER_TEAM OT, SEC S
+        WHERE O.OPER_CD=OT.OPER_CD
+          AND E.SEC_CD = S.SEC_CD
+   	      AND OT.EMP_CD=E.EMP_CD
+          AND OT.OPER_CD=#{operCd}
+	 </select>
+	 <select id="pntVS" resultType="pntVSVO" parameterType="String">
+	 	SELECT B.PNT_NM
+		      ,B.VS_DT
+		      ,B.VS_BP_MAX
+		      ,B.VS_BP_MIN
+		      ,B.VS_TMP
+		      ,B.VS_BS
+		      ,B.YMD
+		      ,SUBSTR(B.VS_DT,6,5) AS DDATE
+  		 FROM (SELECT P.PNT_NM
+		     		 ,V.VS_DT
+		      		 ,V.VS_BP_MAX
+		      	  	 ,V.VS_BP_MIN
+		      	     ,V.VS_TMP
+		      	 	 ,V.VS_BS
+              		 ,TO_NUMBER(SUBSTR(V.VS_DT,1,4)||SUBSTR(V.VS_DT,6,2)||SUBSTR(V.VS_DT,9,2)) AS YMD
+  		         FROM  PATIENT P, VS V 
+ 				WHERE P.PNT_CD = V.PNT_CD
+ 		  		  AND V.PNT_CD = #{pntCd}
+        		ORDER BY YMD DESC)B
+ 		WHERE <![CDATA[ROWNUM <= 5]]>
+ 		ORDER BY YMD
+	 </select>
+	 <select id="operCd" resultType="operationVO">
+	 	   SELECT
+   			'OPR'||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(OPER_CD,4,5))),0)+1),5,'0') AS operCd
+   			 FROM OPERATION
+	 </select>
+	 <select id="writeOperPnt" resultType="patientVO" parameterType="String">
+	 	 	SELECT PNT_CD
+      			  ,PNT_NM
+      			  ,PNT_PRNO
+      			  ,PNT_SEX
+      			  ,PNT_ADDR
+      			  ,PNT_HP
+      	     FROM PATIENT
+			WHERE PNT_CD = #{pntCd}
+	 </select>
+	 <select id="operTeam2" resultType="operTeamVO" parameterType="hashMap">
+	 	SELECT A.RNUM, A.EMP_CD, A.SEC_CD, A.EMP_NM, A.POSITION, A.EMP_PIC, A.STATE_CD, A.DEPT_NM, A.SEC_NM
+  		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY EMP_NM) RNUM
+              ,E.EMP_CD
+      		  ,E.SEC_CD
+      		  ,E.EMP_NM
+      		  ,E.POSITION
+      		  ,E.EMP_PIC
+      		  ,E.STATE_CD
+      		  ,S.DEPT_NM
+      		  ,S.SEC_NM
+      		  ,(SELECT MAJOR
+          		  FROM DOCTOR
+          		 WHERE E.EMP_CD = EMP_CD) MAJOR
+      		  ,(SELECT DUTY
+          		  FROM NURSE
+         		 WHERE E.EMP_CD = EMP_CD) DUTY
+      	 FROM EMP E, SEC S
+     	WHERE E.SEC_CD = S.SEC_CD
+          AND (EMP_NM LIKE '%' || #{keyWord} || '%' OR
+          	   DEPT_NM LIKE '%' || #{keyWord} || '%' OR
+          	   SEC_NM LIKE '%' || #{keyWord} || '%')) A
+<!--      	  WHERE RNUM BETWEEN #{currentPage}*#{size}-#{size}+1 AND #{currentPage}*#{size} -->
+	 </select>
+	 <select id="writeOperTeam" resultType="operTeamVO" parameterType="String">
+	 	SELECT E.EMP_CD
+     		  ,E.EMP_NM
+      		  ,E.POSITION
+      		  ,E.EMP_PIC
+      		  ,E.STATE_CD
+      		  ,S.DEPT_NM
+      		  ,S.SEC_NM
+  		  FROM EMP E, SEC S 
+ 		 WHERE E.SEC_CD = S.SEC_CD
+   	       AND E.EMP_CD = #{empCd}
+	 </select>
+	 <select id="selectOperRoom" resultType="operationVO">
+<!-- 	 	SELECT * -->
+<!--          FROM OPER_ROOM O LEFT OUTER JOIN (SELECT DISTINCT D.OPER_CD, -->
+<!--                                                   D.OP_ROOM_NO, -->
+<!--                                                   D.EMP_NM, -->
+<!--                                                   D.OPER_YMD, -->
+<!--                                                   D.OPER_BGN_TM, -->
+<!--                                                   D.OPER_END_TM, -->
+<!--                                                   D.OPERING, -->
+<!--                                                   D.PNT_CD, -->
+<!--                                                   D.PNT_NM -->
+<!--                                              FROM -->
+<!--                                                 ( -->
+<!--                                                 SELECT   A.OPER_CD -->
+<!--                                                         ,A.OP_ROOM_NO -->
+<!--                                                         ,C.EMP_NM -->
+<!--                                                         ,A.OPER_YMD -->
+<!--                                                         ,A.OPER_BGN_TM -->
+<!--                                                         ,A.OPER_END_TM -->
+<!--                                                         , CASE WHEN SYSDATE BETWEEN TO_DATE(A.OPER_BGN_TM,'YYYY/MM/DD HH24:MI:SS') AND TO_DATE(A.OPER_END_TM,'YYYY/MM/DD HH24:MI:SS') THEN 'Y' -->
+<!--                                                             ELSE 'N' -->
+<!--                                                              END operIng -->
+                                                        
+<!--                                                         ,P.PNT_CD -->
+<!--                                                         ,P.PNT_NM -->
+<!--                                                  FROM OPERATION A, OPER_PROC B, EMP C, PATIENT P -->
+<!--                                                 WHERE C.EMP_CD = A.EMP_CD  -->
+<!--                                                   AND A.PNT_CD = P.PNT_CD -->
+<!--                                                   AND A.OPER_CD = B.OPER_CD) D -->
+<!--                                                 WHERE OPERING = 'Y') T -->
+<!--                                                    ON(O.OP_ROOM_NO = T.OP_ROOM_NO) -->
+			SELECT OP_ROOM_NO
+				  ,OP_ROOM_STATE
+			  FROM OPER_ROOM	  
+	 </select>
+	 <select id="selectSgCode" resultType="sgCodeVO">
+	 	SELECT SG_CD
+	 		  ,SG_NM
+	 		  ,SG_AMT
+	 		  ,J_CLS
+	 		  ,Z_CLS
+	 		  ,SG_OP1
+	 		  ,SG_OP2
+	 	 FROM SG_CD
+	 	WHERE J_CLS = '09' 
+	 	ORDER BY SG_NM 	  
+	 </select>
+	 <select id="selectTreatCode" resultType="treatVO" parameterType="String">
+	 	SELECT A.TREAT_CD
+    		  ,A.TREAT_OP
+      		  ,B.PNT_CD
+      		  ,B.PNT_NM
+  		 FROM TREAT A, PATIENT B 
+ 		WHERE A.PNT_CD = B.PNT_CD
+   		  AND B.PNT_CD = #{pntCd}
+	 </select>
+	 
+	 <select id="selectDis" resultType="treatVO" parameterType="String">
+	 	SELECT B.DIS_CD
+      		  ,B.DIG_CLS
+      		  ,B.DIS_NM
+  		 FROM TREAT A, DIG B    
+ 		WHERE A.TREAT_CD = B.TREAT_CD
+ 		  AND A.TREAT_CD= #{treatCd}
+	 </select>
+	 
+	 <select id="writeSgCode" resultType="sgCodeVO" parameterType="String">
+	 	SELECT SG_NM
+	 	  FROM SG_CD
+	 	 WHERE SG_NM = #{sgNm} 
+	 </select>
+
+	 <insert id="insertOperation" parameterType="hashMap">         
+	 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+	 	INSERT INTO OPERATION
+        VALUES(#{operCd}
+              ,#{treatCd} 
+              ,#{empCd}
+              ,#{pntCd}
+              ,#{opRoomNo}
+              ,#{operYmd}
+              ,#{operBgnTm}
+              ,#{operEndTm}
+              ,0
+              )
+	 </insert>
+	 <insert id="insertOperProc" parameterType="hashMap">
+	 	INSERT INTO OPER_PROC
+	 	VALUES(#{operCd}
+	 		  , (SELECT NVL(MAX(OPC_NO),0) + 1 FROM OPER_PROC WHERE OPER_CD=#{operCd})
+	 		  , (SELECT SG_CD FROM SG_CD WHERE SG_NM=#{opcNm})
+	 		  , #{opcNm} 
+	 		  , (SELECT SG_AMT FROM SG_CD WHERE SG_NM=#{opcNm}))
+	 </insert>
+	 <insert id="insertOperTeam" parameterType="hashMap">
+	 	INSERT INTO OPER_TEAM
+   	    VALUES(#{operCd},
+       	       #{empCd})
+	 </insert>
+	 <select id="operationList" resultType="operationVO" parameterType="String">
+		 SELECT A.OPER_CD
+		 	   ,A.OP_ROOM_NO
+			   ,B.PNT_NM
+			   ,C.OPC_NM
+			   ,TO_DATE(A.OPER_BGN_TM,'YYYY/MM/DD HH24:MI:SS') AS OPER_BGN_TM
+			   ,TO_DATE(A.OPER_END_TM,'YYYY/MM/DD HH24:MI:SS') AS OPER_END_TM
+			   ,D.EMP_NM
+	  	   FROM OPERATION A, PATIENT B, OPER_PROC C, EMP D
+	 	  WHERE A.OPER_CD = C.OPER_CD
+	   		AND A.PNT_CD = B.PNT_CD
+	   		AND A.EMP_CD = D.EMP_CD
+	   		AND D.EMP_NM = #{empNm}
+	   	    AND <![CDATA[TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') < OPER_BGN_TM]]>
+	 </select>
+	 <update id="updateOperation" parameterType="hashMap">
+	 	UPDATE OPERATION
+  		   SET OP_ROOM_NO = #{opRoomNo}
+      		  ,OPER_YMD =#{operYmd}
+      		  ,OPER_BGN_TM =#{operBgnTm}
+      		  ,OPER_END_TM =#{operEndTm}
+ 		 WHERE OPER_CD = #{operCd}  
+	 </update>
+	 <update id="updateOperProc" parameterType="hashMap">
+	 	UPDATE OPER_PROC
+   		   SET OPC_CD = (SELECT SG_CD FROM SG_CD WHERE SG_NM = #{sgNm})
+      		  ,OPC_NM = #{sgNm}
+      		  ,OPC_AMT = (SELECT SG_AMT FROM SG_CD WHERE SG_NM = #{sgNm})
+ 		 WHERE OPER_CD = #{operCd}
+	 </update>
+	 <delete id="deleteOperation" parameterType="String">
+	 	DELETE FROM OPERATION
+	 	 WHERE OPER_CD = #{operCd}
+	 </delete>
+	 <delete id="deleteOperProc" parameterType="String">
+	 	DELETE FROM OPER_PROC
+	 	 WHERE OPER_CD = #{operCd}
+	 </delete>
+	 <select id="recordPntList" resultType="operationVO" parameterType="hashMap">
+	 	SELECT E.SEC_NM
+      ,C.OPER_CD
+      ,A.EMP_NM
+      ,B.PNT_CD
+      ,B.PNT_NM
+      ,B.PNT_PRNO
+      ,B.PNT_SEX
+      ,C.OP_ROOM_NO
+      ,C.OPER_YMD
+      ,B.PRTCR_NM
+      ,D.OPC_CD
+      ,D.OPC_NM
+      ,D.OPC_NO
+      FROM EMP A, PATIENT B, OPERATION C, OPER_PROC D, SEC E
+     WHERE A.EMP_CD = C.EMP_CD
+       AND B.PNT_CD = C.PNT_CD
+       AND C.OPER_CD = D.OPER_CD
+       AND A.SEC_CD = E.SEC_CD
+       AND A.EMP_CD = #{empCd}
+	 </select>
+	 <select id="loadRecord" resultType="operationVO" parameterType="hashMap">
+	 	SELECT E.SEC_NM
+	 		  ,A.PNT_NM
+	 		  ,A.PNT_CD
+	 		  ,(SELECT TRUNC(MONTHS_BETWEEN(TRUNC(SYSDATE), TO_DATE(T.BYEAR,'YYYYMMDD')) / 12) 
+                  FROM (SELECT CASE 
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='1' OR SUBSTR(PNT_PRNO,8,1)='2' THEN TO_NUMBER('19'||SUBSTR(PNT_PRNO,1,6))
+                                 WHEN SUBSTR(PNT_PRNO,8,1)='3' OR SUBSTR(PNT_PRNO,8,1)='4' THEN TO_NUMBER('20'||SUBSTR(PNT_PRNO,1,6))
+                              END AS BYEAR
+                             , PNT_CD
+                       FROM PATIENT)T
+                 WHERE T.PNT_CD=#{pntCd}) AS PNT_AGE
+	 		  ,A.PNT_SEX	
+  		      ,B.OPER_REC_YN
+  		      ,B.OPER_CD
+              ,B.OPER_YMD
+              ,D.EMP_NM
+  		      ,C.DIS_NM
+              ,B.OP_ROOM_NO
+              ,A.PRTCR_NM
+  	     FROM PATIENT A, OPERATION B, DIG C, EMP D, SEC E
+ 		WHERE A.PNT_CD = B.PNT_CD
+ 		  AND B.EMP_CD=#{empCd}
+          AND B.PNT_CD = #{pntCd}
+          AND B.OPER_CD = #{operCd}
+          AND B.TREAT_CD = C.TREAT_CD
+          AND B.EMP_CD = D.EMP_CD
+          AND D.SEC_CD = E.SEC_CD
+	 </select>
+	 <select id="loadRecordProc" resultType="operationVO" parameterType="String">
+	 	SELECT OPC_CD
+     		  ,OPC_NM
+     		  ,OPC_NO
+		  FROM OPER_PROC
+ 		 WHERE OPER_CD = #{operCd}
+	 </select>
+</mapper>

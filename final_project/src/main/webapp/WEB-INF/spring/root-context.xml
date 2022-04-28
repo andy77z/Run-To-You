@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<!--
+		root-context.xml : 스프링 설정 파일
+		
+		view와 관련되지 않은 객체를 정의(스프링 설정)
+		Service(기능, 비즈니스 로직), DAO(Repository), DB등 비즈니스 로직과 관련된 설정
+	-->
+	<!-- dataSource? 데이터베이스와 관련된 정보를 세팅 -->
+	<bean id="dataSource_spid" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@112.220.114.130:1521:xe" />
+		<property name="username" value="team3_202109f" />
+		<property name="password" value="java"/>
+		<property name="maxIdle" value="2"/>
+		<property name="maxTotal" value="2" />
+	</bean>
+
+   	<!-- 직관적인 DB SQL문 로그 설정 pom.xml groupId = org.lazyluke 추가 -->
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+        <constructor-arg ref="dataSource_spid" />
+        <property name="logFormatter">
+            <bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+                <property name="loggingType" value="MULTI_LINE" />
+                <property name="sqlPrefix" value="SQL : "/>
+            </bean>
+        </property>
+    </bean>
+	
+	<!--
+		sqlSessionFactory는 데이터베이스와 연결을 맺고 끊어질 때까지의
+		라이프 사이클을 관리하는 sqlSession 객체를 만듦
+	-->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 데이터소스를 설정 -->
+		<property name="dataSource" ref="dataSource" />
+		
+		<!-- 매퍼 xml 파일의 위치 -->
+		<property name="mapperLocations" value="classpath:/sqlmap/**/*_SQL.xml" />
+		<property name="configLocation" value="/WEB-INF/mybatisAlias/mybatisAlias.xml" />
+	</bean>
+	
+	<!--
+		데이터베이스에 개별적으로 쿼리를 실행시키는 객체. 우리는 소스코드에서 이 객체를 사용하여
+		Query를 실행시킴
+	-->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!--
+		개발자가 직접 DAO를 설정하지 않아도 자동으로 Mapper 인터페이스를 활용하는 객체를 생성함
+		소스마다 설정하지 않고 자동으로 경로를 설정해서 인식시킬 수 있음
+	-->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="kr.or.ddit.*.mapper" />
+	</bean>
+	
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="smtp.gmail.com" /> <!-- gmail을 사용 -->
+        <property name="port" value="587" />
+        <property name="username" value="nny1130@gmail.com" />
+        <property name="password" value="sM2605626@" />
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.transport.protocol">smtp</prop>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.debug">true</prop>
+            </props>
+        </property>
+    </bean>
+    
+
+	
+</beans>

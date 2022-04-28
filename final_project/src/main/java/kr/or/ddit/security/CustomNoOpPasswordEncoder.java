@@ -1,0 +1,34 @@
+package kr.or.ddit.security;
+
+import org.apache.commons.codec.digest.Sha2Crypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+/*
+ * 비밀번호 암호화 처리기
+ * - 스프링 시큐리티 5부터는 기본적으로 PasswordEncoder를 지정해야 함
+ * - 그러므로 원래는 DB에 비밀번호를 암호화 하여 저장 해야함
+ * - 연습이므로 암호화 하지 않고 insert를 할 것임->로그인 시 오류 발생
+ * - 그래서 암호화를 하지 않는 PasswordEncoder를 메소드 재정의 하여 직접 구현하면
+ *   로그인 시 함호화를 고려하지 않으므로 로그인이 잘 됨
+ */
+public class CustomNoOpPasswordEncoder implements PasswordEncoder{
+	private static final Logger logger = 
+			LoggerFactory.getLogger(CustomNoOpPasswordEncoder.class);
+	
+	@Override
+	public String encode(CharSequence rawPassword) {
+		logger.info("**************************  "+rawPassword.toString());
+		logger.warn("before encode : " + rawPassword);
+//		Sha2Crypt.sha256Crypt(map.get("empPw").getBytes(), "$5$" + map.get("empCd"));
+		return rawPassword.toString();
+	}
+
+	@Override
+	public boolean matches(CharSequence rawPassword, String encodedPassword) {
+		logger.warn("matches : " + rawPassword + " : " + encodedPassword);
+		return rawPassword.toString().equals(encodedPassword);
+	}
+	
+}

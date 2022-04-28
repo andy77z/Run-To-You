@@ -1,0 +1,204 @@
+package kr.or.ddit.medical.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.medical.mapper.MedicalMapper;
+import kr.or.ddit.medical.service.MedicalService;
+import kr.or.ddit.medical.vo.CmntVO;
+import kr.or.ddit.medical.vo.MedicalRecordVo;
+import kr.or.ddit.medical.vo.MedicalSchVo;
+import kr.or.ddit.medical.vo.MedicalTreatVo;
+import kr.or.ddit.medical.vo.MedicalVitalSignVo;
+import kr.or.ddit.medical.vo.MedicalVo;
+import kr.or.ddit.medical.vo.PrescriptionVO;
+
+@Service
+public class MedicalServiceImpl implements MedicalService {
+
+	@Autowired
+	MedicalMapper medicalMapper;
+
+	// 진료 등록
+	@Override
+	public int insertMedical(MedicalVo medicalVo) {
+		return medicalMapper.insertMedical(medicalVo);
+	}
+
+	// 진료 예약 목록
+	@Override
+	public List<MedicalVo> selectListMedicalYeyak(Map<String, Object> map) {
+		return medicalMapper.selectListMedicalYeyak(map);
+	}
+
+	// 진료 대기 목록
+	@Override
+	public List<MedicalVo> selectListMedicalDaegi(Map<String, Object> map) {
+		return medicalMapper.selectListMedicalDaegi(map);
+	}
+
+	// 진료 상세 조회
+	@Override
+	public MedicalVo selectDetailMedical(MedicalVo medicalVo) {
+		return medicalMapper.selectDetailMedical(medicalVo);
+	}
+
+	// 증상 수정
+	@Override
+	public int updateSymptoms(MedicalVo medicalVo) {
+		return medicalMapper.updateSymptoms(medicalVo);
+	}
+
+	// 코멘트 저장
+	@Override
+	public int insertCmnt(CmntVO cmntVo) {
+		return medicalMapper.insertCmnt(cmntVo);
+	}
+
+	// 코멘트 수정
+	@Override
+	public int updateCmnt(CmntVO cmntVo) {
+		return medicalMapper.updateCmnt(cmntVo);
+	}
+
+	// 코멘트 삭제
+	@Override
+	public int deleteCmnt(CmntVO cmntVo) {
+		return medicalMapper.deleteCmnt(cmntVo);
+	}
+
+	// 사진 저장
+	@Override
+	public int insertCam(MedicalVo medicalVo) {
+		return medicalMapper.insertCam(medicalVo);
+	}
+
+	// 환자 사진 목록
+	@Override
+	public List<MedicalVo> selectListCam(Map<String, Object> map) {
+		return medicalMapper.selectListCam(map);
+	}
+
+	// 처방 및 진단 검색 결과 리스트
+	@Override
+	public List<MedicalSchVo> selectListJindanSch(Map<String, Object> map) {
+		return medicalMapper.selectListJindanSch(map);
+	}
+
+	// 수가코드 검색 결과 리스트
+	@Override
+	public List<MedicalSchVo> selectListSoogiSch(Map<String, Object> map) {
+		return medicalMapper.selectListSoogiSch(map);
+	}
+
+	// 바이탈사인 저장
+	@Override
+	public int insertVitalSign(MedicalVitalSignVo medicalVitalSignVo) {
+		return medicalMapper.insertVitalSign(medicalVitalSignVo);
+	}
+
+	// 바이탈사인 최근 기록 상세 조회
+	@Override
+	public MedicalVitalSignVo selectVitalSignDetail(MedicalVitalSignVo medicalVitalSignVo) {
+		return medicalMapper.selectVitalSignDetail(medicalVitalSignVo);
+	}
+
+	// 바이탈사인 기록 조회
+	@Override
+	public List<MedicalVitalSignVo> selectListVitalSignRecord(Map<String, Object> map) {
+		return medicalMapper.selectListVitalSignRecord(map);
+	}
+
+	// 진료 저장
+	@Override
+	public int insertTreat(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.insertTreat(medicalTreatVo);
+	}
+
+	// 검사 저장
+	@Override
+	public int insertInspection(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.insertInspection(medicalTreatVo);
+	}
+
+	// 처방 저장
+	@Override
+	public int insertPrescription(PrescriptionVO prescriptionVo) {
+		return medicalMapper.insertPrescription(prescriptionVo);
+	}
+
+	// 질병 저장
+	@Override
+	public int insertDig(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.insertDig(medicalTreatVo);
+	}
+
+	// 차트파일 진료번호로 업데이트
+	@Override
+	public int updateChartFile(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.updateChartFile(medicalTreatVo);
+	}
+
+	// 진료코드 생성
+	@Override
+	public String selectLastTreatCd() {
+		return medicalMapper.selectLastTreatCd();
+	}
+
+	// 진료기록 상세 조회
+	@Override
+	public List<MedicalRecordVo> selectListTreatRecord(String treatCd) {
+		return medicalMapper.selectListTreatRecord(treatCd);
+	}
+
+	// 진료일 목록 조회
+	@Override
+	public List<MedicalRecordVo> selectListTreatDate(MedicalRecordVo medicalRecordVo) {
+		return medicalMapper.selectListTreatDate(medicalRecordVo);
+	}
+
+	// 사진 삭제
+	@Override
+	public int deleteCam(MedicalVo medicalVo) {
+		return medicalMapper.deleteCam(medicalVo);
+	}
+
+	// 환자 상태 업데이트
+	@Override
+	public int updatePntState(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.updatePntState(medicalTreatVo);
+	}
+
+	// 우선대기 환자 검사목록
+	@Override
+	public List<MedicalSchVo> selectListOsDaegiInsp(String rcptNo) {
+		return medicalMapper.selectListOsDaegiInsp(rcptNo);
+	}
+
+	// 우선대기 환자일 경우 진료 업데이트로 처리
+	@Override
+	public int updateTreat(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.updateTreat(medicalTreatVo);
+	}
+
+	// 접수번호에 해당하는 진료 코드 가져오기
+	@Override
+	public String getTreatCd(String rcptNo) {
+		return medicalMapper.getTreatCd(rcptNo);
+	}
+
+	// 수납 내역 추가
+	@Override
+	public int insertRcv(MedicalTreatVo medicalTreatVo) {
+		return medicalMapper.insertRcv(medicalTreatVo);
+	}
+
+	// 퀵오더
+	@Override
+	public List<MedicalSchVo> setQoCd(int qoCd) {
+		return medicalMapper.setQoCd(qoCd);
+	}
+}

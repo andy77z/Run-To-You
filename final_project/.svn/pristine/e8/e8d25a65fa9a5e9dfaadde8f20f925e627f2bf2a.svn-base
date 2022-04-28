@@ -1,0 +1,701 @@
+package kr.or.ddit.medical.controller;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.medical.service.MedicalService;
+import kr.or.ddit.medical.vo.CmntVO;
+import kr.or.ddit.medical.vo.MedicalRecordVo;
+import kr.or.ddit.medical.vo.MedicalSchVo;
+import kr.or.ddit.medical.vo.MedicalTreatVo;
+import kr.or.ddit.medical.vo.MedicalVitalSignVo;
+import kr.or.ddit.medical.vo.MedicalVo;
+import kr.or.ddit.medical.vo.PrescriptionVO;
+import kr.or.ddit.utils.ApiResultVo;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @FileName : MedicalController.java
+ * @Project : final_project
+ * @Date : 2022. 3. 13.
+ * @작성자 : LJH
+ * @변경이력 :
+ * @프로그램 설명 : 진료 컨트롤러
+ */
+@Controller
+@RequestMapping("/medical")
+@Slf4j
+public class MedicalController {
+
+	@Autowired
+	MedicalService medicalService;
+
+	// 진료 메인 페이지
+	@GetMapping("/main")
+	public String main(Locale locale, Model model) {
+
+		log.info(" :::: 진료 메인 페이지 호출 :::: ");
+
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "medical/main";
+	}
+
+	// 진료 페이지
+	@GetMapping("/treat")
+	public String medicalTreat(Locale locale, Model model) {
+
+		log.info(" :::: 진료 페이지 호출 :::: ");
+
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "medical/treat";
+	}
+
+	// 진료 기록 페이지
+	@GetMapping("/treat/record")
+	public String medicalTreatRecord(Locale locale, Model model) {
+
+		log.info(" :::: 진료 기록 페이지 호출 :::: ");
+
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "medical/treat_record";
+	}
+
+	/**
+	 * @Method Name : selectListMedicalYeyak
+	 * @작성일 : 2022. 3. 13.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 진료예약 목록을 조회한다. json Type
+	 * @param param
+	 * @return resp
+	 * @throws Exception
+	 */
+	@GetMapping("/selectListMedicalYeyak")
+	@ResponseBody
+	public ApiResultVo<List<MedicalVo>> selectListMedicalYeyak(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListMedicalYeyak 호출");
+
+		ApiResultVo<List<MedicalVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListMedicalYeyak(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : selectListMedicalDaegi
+	 * @작성일 : 2022. 3. 13.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 진료대기 목록을 조회한다. json Type
+	 * @param param
+	 * @return resp
+	 * @throws Exception
+	 */
+	@GetMapping("/selectListMedicalDaegi")
+	@ResponseBody
+	public ApiResultVo<List<MedicalVo>> selectListMedicalDaegi(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListMedicalDaegi 호출");
+
+		ApiResultVo<List<MedicalVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListMedicalDaegi(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : selectDetailMedical
+	 * @작성일 : 2022. 3. 16.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 진료상세 조회
+	 * @param vo
+	 * @return
+	 * @throws Exception
+	 */
+	@PostMapping("/selectDetailMedical")
+	@ResponseBody
+	public ApiResultVo<MedicalVo> selectDetailMedical(MedicalVo vo) throws Exception {
+
+		log.info("selectDetailMedical : " + vo.toString());
+
+		ApiResultVo<MedicalVo> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectDetailMedical(vo));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : updateSymptoms
+	 * @작성일 : 2022. 3. 13.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 증상을 수정한다.
+	 * @param vo
+	 * @return resp
+	 * @throws Exception
+	 */
+	@PostMapping("/updateSymptoms")
+	@ResponseBody
+	public ApiResultVo<MedicalVo> updateSymptoms(MedicalVo vo) throws Exception {
+
+		log.info("updateSymptoms : " + vo.toString());
+
+		ApiResultVo<MedicalVo> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.updateSymptoms(vo);
+
+			if (result > 0) {
+				log.info("증상 수정완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : insertCmnt
+	 * @작성일 : 2022. 3. 16.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 코멘트 저장
+	 * @param vo
+	 * @return
+	 * @throws Exception
+	 */
+	@PostMapping("/insertCmnt")
+	@ResponseBody
+	public ApiResultVo<CmntVO> insertCmnt(CmntVO vo) throws Exception {
+
+		log.info("insertCmnt : " + vo.toString());
+
+		ApiResultVo<CmntVO> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.insertCmnt(vo);
+
+			if (result > 0) {
+				log.info("코멘트 저장 완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : deleteCmnt
+	 * @작성일 : 2022. 3. 16.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 코멘트 삭제
+	 * @param vo
+	 * @return
+	 * @throws Exception
+	 */
+	@PostMapping("/deleteCmnt")
+	@ResponseBody
+	public ApiResultVo<CmntVO> deleteCmnt(CmntVO vo) throws Exception {
+
+		log.info("deleteCmnt : " + vo.toString());
+
+		ApiResultVo<CmntVO> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.deleteCmnt(vo);
+
+			if (result > 0) {
+				log.info("코멘트 삭제 완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	/**
+	 * @Method Name : updateCmnt
+	 * @작성일 : 2022. 3. 16.
+	 * @작성자 : LJH
+	 * @변경이력 :
+	 * @Method 설명 : 코멘트 수정
+	 * @param vo
+	 * @return
+	 * @throws Exception
+	 */
+	@PostMapping("/updateCmnt")
+	@ResponseBody
+	public ApiResultVo<CmntVO> updateCmnt(CmntVO vo) throws Exception {
+
+		log.info("updateCmnt : " + vo.toString());
+
+		ApiResultVo<CmntVO> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.updateCmnt(vo);
+
+			if (result > 0) {
+				log.info("코멘트 수정 완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 사진 저장
+	@PostMapping("/insertCam")
+	@ResponseBody
+	public ApiResultVo<MedicalVo> insertCam(MedicalVo vo) throws Exception {
+
+		log.info("insertCam : " + vo.toString());
+
+		ApiResultVo<MedicalVo> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.insertCam(vo);
+
+			if (result > 0) {
+				log.info("사진 저장 완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 사진 리스트 조회
+	@PostMapping("/selectListCam")
+	@ResponseBody
+	public ApiResultVo<List<MedicalVo>> selectListCam(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListCam 호출 : " + paramMap.toString());
+
+		ApiResultVo<List<MedicalVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListCam(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 촬영 팝업창 호출
+	@GetMapping("/cam")
+	public String cam(Locale locale, Model model) {
+
+		log.info(" :::: 촬영 팝업창 호출 :::: ");
+
+		// 팝업창에 tiles가 적용되는 문제를 해결하기 위해 tiles가 적용되지 않는 새 경로 지정
+		return "medical/cam_notiles/cam";
+	}
+
+	// 진단 및 처방 검색 조회
+	@GetMapping("/selectListJindanSch")
+	@ResponseBody
+	public ApiResultVo<List<MedicalSchVo>> selectListJindanSch(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListJindanSch 호출 : " + paramMap.toString());
+
+		ApiResultVo<List<MedicalSchVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListJindanSch(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 수가코드 검색 조회
+	@GetMapping("/selectListSoogiSch")
+	@ResponseBody
+	public ApiResultVo<List<MedicalSchVo>> selectListSoogiSch(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListSoogiSch 호출 : " + paramMap.toString());
+
+		ApiResultVo<List<MedicalSchVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListSoogiSch(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 바이탈사인 조회
+	@PostMapping("/selectVitalSignDetail")
+	@ResponseBody
+	public ApiResultVo<MedicalVitalSignVo> selectVitalSignDetail(MedicalVitalSignVo vo) throws Exception {
+
+		log.info("selectVitalSignDetail : " + vo.toString());
+
+		ApiResultVo<MedicalVitalSignVo> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectVitalSignDetail(vo));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 바이탈사인 저장
+	@PostMapping("/insertVitalSign")
+	@ResponseBody
+	public ApiResultVo<Integer> insertVitalSign(MedicalVitalSignVo vo) throws Exception {
+
+		log.info("insertVitalSign : " + vo.toString());
+
+		ApiResultVo<Integer> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.insertVitalSign(vo);
+
+			if (result > 0) {
+				log.info("바이탈사인 저장 완료");
+				resp.setResponse(result);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 바이탈사인 기록 목록 조회
+	@PostMapping("/selectListVitalSignRecord")
+	@ResponseBody
+	public ApiResultVo<List<MedicalVitalSignVo>> selectListVitalSignRecord(@RequestParam Map<String, Object> paramMap) {
+
+		log.info("selectListVitalSignRecord 호출 : " + paramMap.toString());
+
+		ApiResultVo<List<MedicalVitalSignVo>> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListVitalSignRecord(paramMap));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 진료 저장
+	@PostMapping("/insertTreat")
+	@ResponseBody
+	public ApiResultVo<Integer> insertTreat(@RequestBody MedicalTreatVo vo) throws Exception {
+
+		ApiResultVo<Integer> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = 0;
+
+			// Step 1. treatCd 생성
+			String treatCd = medicalService.getTreatCd(vo.getRcptNo());
+
+			// Step 2. 인서트용 저장 vo에 값 treatCd 셋팅
+			vo.setTreatCd(treatCd);
+			log.info("insertTreat : " + vo.toString());
+
+			// Step 3. 진료 테이블 저장
+			if (medicalService.updateTreat(vo) > 0) {
+				log.info("insertTreat 진료 저장 완료");
+
+				// Step 4. 처방 테이블 저장
+
+				for (int i = 0; i < vo.getPrescription().size(); i++) {
+					PrescriptionVO pvo = vo.getPrescription().get(i);
+					pvo.setTreatCd(vo.getTreatCd());
+					result += medicalService.insertPrescription(pvo);
+				}
+
+				log.info("insertPrescription 처방 저장 완료");
+				if (result > 0) {
+					// Step 5. 질병 테이블 저장
+					if (medicalService.insertDig(vo) > 0) {
+						log.info("insertDig 질병 저장 완료");
+
+						// Step 6. 환자 상태 업데이트
+						if (medicalService.updatePntState(vo) > 0) {
+							log.info("updatePntState 환자 업데이트 완료");
+
+							// Step 7. 차트 테이블 사진 현재 진료코드로 수정
+							result = medicalService.updateChartFile(vo);
+							if (vo.getStateCd().equals("PS6")) {
+								result = medicalService.insertRcv(vo);
+							}
+						}
+					}
+				}
+			}
+
+			if (result > 0) {
+				log.info("진료 저장 완료");
+				resp.setResponse(result);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 검사 저장
+	@PostMapping("/insertInspection")
+	@ResponseBody
+	public ApiResultVo<Integer> insertInspection(@RequestBody MedicalTreatVo vo) throws Exception {
+
+		ApiResultVo<Integer> resp = new ApiResultVo<Integer>();
+
+		try {
+			int result = 0;
+
+			// treatCd 생성
+			String treatCd = medicalService.selectLastTreatCd();
+
+			// vo에 treatCd 셋팅
+			vo.setTreatCd(treatCd);
+			log.info("insertTreat : " + vo.toString());
+
+			// 진료 테이블 저장
+			if (medicalService.insertTreat(vo) > 0) {
+				log.info("insertTreat 진료 저장 완료");
+
+				// 수가코드 개수만큼 반복 검사 테이블 저장
+				String[] array = vo.getSgCdArr();
+				for (String sgCd : array) {
+					vo.setSgCd(sgCd);
+					result = medicalService.insertInspection(vo);
+				}
+
+				// 검사 저장 성공시
+				if (result > 0) {
+					log.info("insertInspection 검사 테이블 저장 완료");
+				}
+
+				// 환자 상태 업데이트
+				if (medicalService.updatePntState(vo) > 0) {
+					log.info("updatePntState 환자 업데이트 완료");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+
+		return resp;
+	}
+
+	// 진료기록 상세 조회
+	@PostMapping("/selectListTreatRecord")
+	@ResponseBody
+	public ApiResultVo<List<MedicalRecordVo>> selectListTreatRecord(MedicalRecordVo medicalRecordVo) {
+		log.info("selectListTreatRecord 호출 : " + medicalRecordVo.toString());
+		ApiResultVo<List<MedicalRecordVo>> resp = new ApiResultVo<>();
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListTreatRecord(medicalRecordVo.getTreatCd()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 진료일 목록 조회
+	@PostMapping("/selectListTreatDate")
+	@ResponseBody
+	public ApiResultVo<List<MedicalRecordVo>> selectListTreatDate(MedicalRecordVo medicalRecordVo) {
+		log.info("selectListTreatDate 호출 : " + medicalRecordVo.toString());
+		ApiResultVo<List<MedicalRecordVo>> resp = new ApiResultVo<>();
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListTreatDate(medicalRecordVo));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 우선대기 환자 검사 목록
+	@PostMapping("/selectListOsDaegiInsp")
+	@ResponseBody
+	public ApiResultVo<List<MedicalSchVo>> selectListOsDaegiInsp(String rcptNo) {
+		ApiResultVo<List<MedicalSchVo>> resp = new ApiResultVo<>();
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.selectListOsDaegiInsp(rcptNo));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 진료 기록 페이지 호출
+	@GetMapping("/treatRecord")
+	public String treatRecord(Locale locale, Model model) {
+		log.info(" :::: 진료 기록 페이지 호출 :::: ");
+
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "medical/treat_record";
+	}
+
+	// 사진 삭제
+	@PostMapping("/deleteCam")
+	@ResponseBody
+	public ApiResultVo<MedicalVo> deleteCam(MedicalVo vo) throws Exception {
+
+		log.info("deleteCam : " + vo.toString());
+
+		ApiResultVo<MedicalVo> resp = new ApiResultVo<>();
+
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			int result = medicalService.deleteCam(vo);
+
+			if (result > 0) {
+				log.info("사진 삭제 완료");
+				resp.setResponse(vo);
+			} else {
+				resp.setCheck(false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+
+	}
+
+	// 퀵오더
+	@PostMapping("/setQoCd")
+	@ResponseBody
+	public ApiResultVo<List<MedicalSchVo>> setQoCd(int qoCd) {
+		ApiResultVo<List<MedicalSchVo>> resp = new ApiResultVo<>();
+		try {
+			// 에러가 발생시 처리한다. 응답 response에 오류를 알린다.
+			resp.setResponse(medicalService.setQoCd(qoCd));
+		} catch (Exception e) {
+			e.printStackTrace();
+			resp.setMessage("error");
+			resp.setCheck(false);
+		}
+		return resp;
+	}
+
+}

@@ -1,0 +1,355 @@
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>  
+<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>  
+<%@taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags"%>
+
+<script>
+$(function(){
+	
+	// 검색창에서 enter 눌렀을 때 환자 조회
+	$('.searchPatient').on("keyup",function(key){
+		
+        if(key.keyCode==13) {
+        	$('.patientList').empty();
+            keyword = $(this).val();
+            
+            data = {};
+            data["keyword"] = keyword;
+            $.ajax({
+    			url:"/inject/searchPatient",
+    			data: data,
+    			method:"get",
+    			dataType:"json",
+    			success: function(res){           
+            		str = "";
+            		for(i = 0; i < res.length; i++){
+            			str += '<tr role="row" class="odd searchPatientOne">' 
+            			str += '<td class="text-center sorting_1"><button class="btn btn-none searchPatientBtn" type="button" value="'+res[i].pntCd+'" style="font-size:12px;,font-weight:bold;">'+ res[i].pntNm +'</button></td>'	
+						str += '<td class=" text-center">'+ res[i].pntPrno.substring(0,6) +'</td>'
+						str += '<td class=" text-center">'+ res[i].pntSex +'</td>'
+						str += '<td class=" text-center">'+ res[i].pntHp +'</td></tr>'
+            		}
+            		$('.patientList').append(str);
+    			}
+            });//ajax 끝
+        }
+	});
+	
+// 	// 동적생성된 tr에 마우스 오버 시  
+// 	$('table tr').on({'mouseenter' : function(){ 
+// 		$(this).css("backgroundColor","#ccc");
+// 		},
+
+//         'mouseleave' : function(){
+//         	$(this).css("backgroundColor","white");
+//         	}
+//        });
+
+
+// 	$(document).on("mouseenter",".searchPatientOne",function(){
+// 		$(this).css("backgroundColor","blue");
+			
+// 	});
+
+	$(document).on("click",".searchPatientBtn",function(){
+		$('.injectList').empty();
+		pntCd = $(this).val();
+		pntNm = $(this).text();
+		$('#datePatientCd').val(pntCd);
+		
+		data = {};
+        data["pntCd"] = pntCd;
+        $.ajax({
+			url:"/inject/injectDetail",
+			data: data,
+			method:"get",
+			dataType:"json",
+			success: function(res){
+			
+			str = "";
+       		for(i = 0; i < res.length; i++){
+       			str += '<tr role="row" class="odd">' 
+       			str += '<td class="text-center sorting_1"><button class="btn btn-none searchInjectBtn" type="button" value="'+res[i].injCd+'" style="font-size:12px,font-weight:bold;">'+ i +'</button></td>'	
+				str += '<td class=" text-center">'+ res[i].drugNm +'</td>'
+				str += '<td class=" text-center">'+ res[i].injDt.substring(0,8) +'</td>'
+				str += '<td class=" text-center">'+ res[i].empCd +'</td></tr>'
+       		}
+       		$('.injectList').append(str);	
+				
+			$('.searchPatientName').val(pntNm);
+			$('#choiceComment').attr("hidden", true);
+			$('#inject_wrapper').attr("hidden", false);
+			
+			
+			}
+        });
+	});
+	
+	//기간 선택 시
+	$('.injectRange').on('click', function(){
+		selectDate = $(this).val();
+		var today = new Date();
+		var year = today.getFullYear();
+		var month = ('0' + (today.getMonth() + 1)).slice(-2);
+		var day = ('0' + today.getDate()).slice(-2);
+		var edate = year + month + day;
+		switch(selectDate){
+			case "1":
+				month = ('0' + today.getMonth()).slice(-2);
+				break;
+			case "3":
+				month = ('0' + (today.getMonth() -2)).slice(-2);
+				break;
+			case "6":
+				month = ('0' + (today.getMonth() -5)).slice(-2);
+				break;
+			case "12":	
+				year = year -1 ;
+				break;
+		} 
+		
+		var sdate = year + month + day;
+		
+		$('.injectList').empty();
+		pntCd = $('#datePatientCd').val();
+		pntNm = $(this).text();
+		data = {};
+        data["pntCd"] = pntCd;
+        data["sDate"] = sdate;
+        data["eDate"] = edate;
+        $.ajax({
+			url:"/inject/injectDetail",
+			data: data,
+			method:"get",
+			dataType:"json",
+			success: function(res){
+			
+			str = "";
+       		for(i = 0; i < res.length; i++){
+       			str += '<tr role="row" class="odd">' 
+       			str += '<td class="text-center sorting_1"><button class="btn btn-none searchInjectBtn" type="button" value="'+res[i].injCd+'" style="font-size:12px,font-weight:bold;">'+ i +'</button></td>'	
+				str += '<td class=" text-center">'+ res[i].drugNm +'</td>'
+				str += '<td class=" text-center">'+ res[i].injDt.substring(0,8) +'</td>'
+				str += '<td class=" text-center">'+ res[i].empNm +'</td></tr>'
+       		}
+       		$('.injectList').append(str);	
+				
+			$('#choiceComment').attr("hidden", true);
+			$('#inject_wrapper').attr("hidden", false);
+			
+			
+			}
+        });
+	});
+	
+	
+	$('#eDate').on('change', function(){
+		pntCd = $('#datePatientCd').val();
+		sdate = $('#sDate').val();
+		edate = $(this).val();
+		data = {};
+			data["pntCd"] = pntCd;
+			data["startDate"] = sdate.replaceAll("-", "");
+			data["endDate"] = edate.replaceAll("-", "");
+		if(sdate > edate){
+			alert("종료일은 시작일 이후여야 합니다.다시 선택 해주세요.")
+			$(this).val("");
+		}else{
+			$('.injectList').empty();
+			$.ajax({
+				url:"/inject/injectDetail",
+				data: data,
+				method:"get",
+				dataType:"json",
+				success: function(res){
+				
+				str = "";
+	       		for(i = 0; i < res.length; i++){
+	       			str += '<tr role="row" class="odd">' 
+	       			str += '<td class="text-center sorting_1"><button class="btn btn-none searchInjectBtn" type="button" value="'+res[i].injCd+'" style="font-size:12px,font-weight:bold;">'+ i +'</button></td>'	
+					str += '<td class=" text-center">'+ res[i].drugNm +'</td>'
+					str += '<td class=" text-center">'+ res[i].injDt.substring(0,8) +'</td>'
+					str += '<td class=" text-center">'+ res[i].empNm +'</td></tr>'
+	       		}
+	       		$('.injectList').append(str);	
+					
+				$('#choiceComment').attr("hidden", true);
+				$('#inject_wrapper').attr("hidden", false);
+				
+				
+				}
+	        });
+		};
+	});
+	
+	// 투약목록에서 클릭 시 
+	$(document).on("click",".searchInjectBtn",function(){
+		$('#injectDetail').empty();
+		injCd = $(this).val();
+		
+		data={};
+		data["injCd"] = injCd;
+		
+		$.ajax({
+				url:"/inject/injectDetail",
+				data: data,
+				method:"get",
+				dataType:"json",
+				success: function(res){
+				console.log(res);		
+				$('#injectModal').modal("show");
+				}
+		});
+	});
+});
+
+</script>
+
+<div class="main_content_iner ">
+	<div class="container-fluid p-0">
+		<div class="row justify-content-center">
+			<div class="col-lg-12">
+				<div class="messages_box_area">
+					<div class="messages_list">
+					
+					<!-- ------------- 환자 선택 -------------- -->
+						<div class="white_box shadow-sm mb-3">
+							<div class="message_pre_left">
+								<input type="hidden" id="selectPatientNm">
+								<div class="messges_info">
+									<h4 class="mb-3">환자선택</h4>
+								</div>
+							</div>
+
+							<div id="patient_wrapper" class="dataTables_wrapper no-footer"><div id="patient_filter" class="dataTables_filter"><label>환자검색 : <input type="search" class="searchPatient" placeholder="이름 또는 생년월일 입력" aria-controls="patientTb"></label></div><table class="table dataTable no-footer" id="patientTb" role="grid" aria-describedby="patientTb_info" style="width: 428px;">
+								<thead>
+									<tr role="row">
+									<th scope="col" class="text-center sorting_asc" tabindex="0" aria-controls="patientTb" rowspan="1" colspan="1" aria-sort="ascending" aria-label="성함: activate to sort column ascending" style="width: 66px;">성함</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="patientTb" rowspan="1" colspan="1" aria-label="생년월일: activate to sort column ascending" style="width: 106px;">생년월일</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="patientTb" rowspan="1" colspan="1" aria-label="생년월일: activate to sort column ascending" style="width: 106px;">성별</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="patientTb" rowspan="1" colspan="1" aria-label="생년월일: activate to sort column ascending" style="width: 106px;">전화번호</th>
+									</tr>
+								</thead>
+							<tbody class="patientList">
+						
+							</tbody>
+							</table>
+							<div class="dataTables_info" id="patientTb_info" role="status" aria-live="polite">총 1명</div><div class="dataTables_paginate paging_simple_numbers" id="patientTb_paginate"><a class="paginate_button previous disabled" aria-controls="patientTb" data-dt-idx="0" tabindex="0" id="patientTb_previous">이전</a><span><a class="paginate_button current" aria-controls="patientTb" data-dt-idx="1" tabindex="0">1</a></span><a class="paginate_button next disabled" aria-controls="patientTb" data-dt-idx="2" tabindex="0" id="patientTb_next">다음</a></div></div>
+						</div>
+						<!-- ------------- 환자 선택 끝-------------- -->
+						
+
+						<!------------------- 기간선택 --------------------->
+						<div class="white_box shadow-sm">
+							<div class="message_pre_left">
+								<div class="messges_info">
+									<input type="text" id="datePatientCd" hidden="true">
+									<h4 class="mb-3">기간선택</h4>
+								</div>
+							</div>
+
+							<div id="rangeTb_wrapper" class="dataTables_wrapper no-footer">
+<!-- 							<div id="rangeTb_filter" class="dataTables_filter"> -->
+<!-- 							<label>환자검색 : <input type="search" class="" placeholder="" aria-controls="rangeTb"> -->
+<!-- 							</label> -->
+<!-- 							</div> -->
+							<table class="table dataTable no-footer" id="rangeTb" role="grid" aria-describedby="rangeTb_info" style="width: 428px;">
+								<thead>
+									<tr role="row">
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="rangeTb" rowspan="1" colspan="1" aria-label="조회정보: activate to sort column ascending" style="width: 66px;">선택
+									</th>
+<!-- 									<th><button type="button" class="btn btn-outline-info injectRange" value="1" style="font-size:1px;">최근 1개월</button></th> -->
+<!-- 									<th><button type="button" class="btn btn-outline-info injectRange" value="3" style="font-size:1px;">최근 3개월</button></th> -->
+<!-- 									<th><button type="button" class="btn btn-outline-info injectRange" value="6" style="font-size:1px;">최근 6개월</button></th> -->
+<!-- 									<th><button type="button" class="btn btn-outline-info injectRange" value="12" style="font-size:1px;">최근 12개월</button></th> -->
+ 									<th scope="col" class="text-center sorting_asc" tabindex="0" aria-controls="rangeTb" rowspan="1" colspan="1" aria-sort="ascending" aria-label="접수시각: activate to sort column descending" style="width: 106px;">
+										<button type="button" class="btn btn-outline-info injectRange" value="1" style="font-size:1px;">최근 1개월</button></th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="rangeTb" rowspan="1" colspan="1" aria-label="성함: activate to sort column ascending" style="width: 106px;">
+										<button type="button" class="btn btn-outline-info injectRange" value="3" style="font-size:1px;">최근 3개월</button></th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="rangeTb" rowspan="1" colspan="1" aria-label="생년월일: activate to sort column ascending" style="width: 106px;">
+										<button type="button" class="btn btn-outline-info injectRange" value="6" style="font-size:1px;">최근 6개월</button></th> 
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="rangeTb" rowspan="1" colspan="1" aria-label="생년월일: activate to sort column ascending" style="width: 106px;">
+										<button type="button" class="btn btn-outline-info injectRange" value="6" style="font-size:1px;">최근 12개월</button></th> 
+									</tr>
+								</thead>
+							<tbody>
+							<tr role="row" class="odd">
+							<td class="text-center sorting_1">직접 입력</td>
+							<td class=" text-center"><input type="date" id="sDate" ></td>
+							<td class=" text-center"><input type="date" id="eDate" ></td>
+							</tr>
+							</tbody>
+							</table>
+							</div>
+							</div>
+					</div>
+
+					<div class="messages_list mb_30">
+						<form id="frm" name="frm" class="mb-0">
+							<div class="white_box shadow-sm mb-3">
+								<div class="message_pre_left">
+									<div class="messges_info">
+										<h4 class="mb-3">투약이력</h4>
+										<p id="choiceComment">환자가 선택되지 않았습니다.</p>
+									</div>
+								</div>
+								
+								<div id="inject_wrapper" class="dataTables_wrapper no-footer" hidden="true"><div id="inject_filter" class="dataTables_filter"><label>환자명 : <input type="text" class="searchPatientName" aria-controls="injectTb"></label></div><table class="table dataTable no-footer" id="injectTb" role="grid" aria-describedby="injectTb_info" style="width: 428px;">
+								<thead>
+									<tr role="row">
+									<th scope="col" class="text-center sorting_asc" tabindex="0" aria-controls="injectTb" rowspan="1" colspan="1" aria-sort="ascending" aria-label="번호: activate to sort column ascending" style="width: 66px;">번호</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="injectTb" rowspan="1" colspan="1" aria-label="의약품명: activate to sort column ascending" style="width: 106px;">의약품명</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="injectTb" rowspan="1" colspan="1" aria-label="투약일자: activate to sort column ascending" style="width: 106px;">투약일자</th>
+									<th scope="col" class="text-center sorting" tabindex="0" aria-controls="injectTb" rowspan="1" colspan="1" aria-label="담당직원: activate to sort column ascending" style="width: 106px;">담당직원</th>
+									</tr>
+								</thead>
+								<tbody class="injectList">
+							
+								</tbody>
+								</table>
+								<div class="dataTables_info" id="injectTb_info" role="status" aria-live="polite"></div><div class="dataTables_paginate paging_simple_numbers" id="injectTb_paginate"><a class="paginate_button previous disabled" aria-controls="injectTb" data-dt-idx="0" tabindex="0" id="injectTb_previous">이전</a><span><a class="paginate_button current" aria-controls="injectTb" data-dt-idx="1" tabindex="0">1</a></span><a class="paginate_button next disabled" aria-controls="injectTb" data-dt-idx="2" tabindex="0" id="injectTb_next">다음</a></div></div>	
+
+
+								<hr class="my-4">
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="loding-center">
+		<div class="spinner-border" role="status" style="display: none;">
+			<span class="sr-only">Loading...</span>
+		</div>
+	</div>
+</div>
+
+<!----------------- 투약상세  Modal 시작-------------------->
+		<div class="modal fade" id="injectModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h2 class="modal-title" id="exampleModalLabel">상세 투약내역</h2>
+						<button class="close" type="button" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">X</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div id="injectDetail">
+							<table>
+								<tr>
+									<th>의약품코드</th>
+									<th></th>
+									<th>의약품명</th>
+									<th></th>
+								</tr>							
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+<!----------------- 투약상세 Modal 끝-------------------->

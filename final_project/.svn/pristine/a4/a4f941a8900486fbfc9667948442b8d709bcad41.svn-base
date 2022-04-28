@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc 
+		https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans 
+		https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context 
+		https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/security 
+        http://www.springframework.org/schema/security/spring-security.xsd
+        http://www.springframework.org/schema/tx 
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/websocket
+        http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<!-- 정적 폴더 -> images, js, css, upload -->
+	<resources mapping="/resources/**" location="/resources/" />
+  
+	<!-- 컨트롤러에서 return되는 string값(파일명) 앞 뒤로 조립되는 값 -->
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<context:component-scan base-package="kr.or.ddit" />
+	
+	<beans:bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+		<beans:property name="definitions">
+			<beans:list>
+				<beans:value>/WEB-INF/spring/tiles-config.xml</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<beans:property name="order" value="0"/>
+	</beans:bean>
+	
+	<!-- Tiles -->
+	<!-- Tiles 를 가장 우선적으로 로드시킨다는 설정 -->
+	<beans:bean class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<beans:property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView" />
+		<beans:property name="order" value="1" /> <!-- 순서를 우선으로 지정 -->
+	</beans:bean>
+	
+	<!-- 컨트롤러에서 return되는 string값(파일명) 앞 뒤로 조립되는 값 -->
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+		<beans:property name="order" value="2"/>
+	</beans:bean>
+	
+	<!-- InterCeptor > Controller Request URL 호출전에 시작하는 행위 -->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<beans:bean id="loggerInterceptor" class="kr.or.ddit.utils.CommonInterceptor"/>
+		</mvc:interceptor>
+		
+		<mvc:interceptor>
+			<mvc:mapping path="/"/>
+			<mvc:mapping path="/profile/*"/>
+			<mvc:mapping path="/ent/enting"/>
+			<mvc:mapping path="/ent/entHome"/>
+			<mvc:mapping path="/ent/entEmp"/>
+			<mvc:mapping path="/medical/main"/>
+			<mvc:mapping path="/medical/treat"/>
+			<mvc:mapping path="/medical/treat/record"/>
+			<mvc:mapping path="/medical/treat/cam"/>
+			<mvc:mapping path="/reservation/main"/>
+			<mvc:mapping path="/patients/patientsList"/>
+			<mvc:mapping path="/patients/insertPage"/>
+<!-- 			<mvc:mapping path="/inspection/*"/> -->
+<!-- 			<mvc:mapping path="/operation/*"/> -->
+			<mvc:exclude-mapping path="/profile/basicModify"/>
+			<mvc:exclude-mapping path="/profile/pwModify"/>
+			<mvc:exclude-mapping path="/profile/pwMatches"/>
+			<beans:bean class="kr.or.ddit.utils.interceptor.LoginInfoInjector"/>
+		</mvc:interceptor>
+		
+	</mvc:interceptors>
+	
+	<!-- 잭슨설정 -->
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<beans:bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	
+	<!-- kr.or.ddit.security 패키지를 컴포넌트 스캔 대상으로 함 -->
+	<context:component-scan base-package="kr.or.ddit.security" />
+	
+	<security:global-method-security secured-annotations="enabled" pre-post-annotations="enabled" />
+	
+	<!-- websocket handler -->
+	<beans:bean id="echoHandler" class="kr.or.ddit.utils.EchoHandler"/>
+
+	<websocket:handlers>
+		<websocket:mapping handler="echoHandler" path="/echo"/>
+		<websocket:sockjs/>
+	</websocket:handlers>
+	
+	<!-- 첨부파일을 처리하는 빈 설정 -->
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver" />
+
+	<!-- 엑셀 -->
+	<beans:bean id="excelDownloadView" class="kr.or.ddit.utils.ExcelDownloadView"/>
+    
+    <!-- 제이슨뷰 -->
+    <beans:bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView"/>
+    
+</beans:beans>
+

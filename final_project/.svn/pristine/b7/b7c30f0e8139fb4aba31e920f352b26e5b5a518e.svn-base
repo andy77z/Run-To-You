@@ -1,0 +1,304 @@
+package kr.or.ddit.operation.controller;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.emp.service.EmpService;
+import kr.or.ddit.emp.vo.EmpVO;
+import kr.or.ddit.operation.service.OperationService;
+import kr.or.ddit.operation.vo.ChartVO;
+import kr.or.ddit.operation.vo.OperDetailVO;
+import kr.or.ddit.operation.vo.OperReservationVO;
+import kr.or.ddit.operation.vo.OperTeamVO;
+import kr.or.ddit.operation.vo.OperationVO;
+import kr.or.ddit.operation.vo.PatientVO;
+import kr.or.ddit.operation.vo.PntVSVO;
+import kr.or.ddit.operation.vo.SgCodeVO;
+import kr.or.ddit.operation.vo.TreatVO;
+import kr.or.ddit.operation.vo.operationRoomVO;
+import kr.or.ddit.patients.vo.PatientsVO;
+import kr.or.ddit.security.CustomUser;
+
+
+
+
+@Controller
+@RequestMapping(value="/operation")
+public class OperationController {
+	
+	@Autowired
+	OperationService operationService;
+	
+	@Autowired
+	EmpService empService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(OperationController.class);
+	
+	@GetMapping("/main")
+	public String main(Model model,Authentication auth) {
+		List<OperationVO> operationList = this.operationService.selectOperList();
+		CustomUser user = (CustomUser) auth.getPrincipal();
+		EmpVO empVO = user.getUser();
+				
+		model.addAttribute("loginUser", empVO);
+		model.addAttribute("secSelectBox", empService.secSelectBox());
+		
+		logger.info(operationList.toString());
+		model.addAttribute("list", operationList);
+		return "operation/main";
+	}
+	
+	
+//	@PostMapping("/selectOperList")
+//	@ResponseBody
+//	public String selectOperList(Model model ){
+//		return "operation/main";
+//	}
+	
+	@PostMapping("/chart")
+	@ResponseBody
+	public List<ChartVO> OperChart(Model model, ChartVO chartVO){
+		
+		ArrayList<ChartVO> operChart = this.operationService.operChart();
+		
+		logger.info(operChart.toString());
+		
+		return operChart;
+	}
+	
+	@PostMapping("/detail")
+	public String OperDetail(Model model, @RequestParam String operCd,@RequestParam String pntCd,Authentication auth) {
+		logger.info("sasdaadsdsasda");
+		logger.info(operCd);
+		logger.info(pntCd);
+		OperDetailVO pntInfo = this.operationService.pntInfo(pntCd);
+//		OperDetailVO operPntInfo = this.operationService.operPntInfo(operCd);
+		List<OperDetailVO> operPntVS = this.operationService.operPntVS(pntCd);
+		List<OperDetailVO> operPntInj = this.operationService.operPntInj(pntCd);
+		List<OperDetailVO> operIns = this.operationService.operIns(pntCd);
+		List<OperDetailVO> operTeam = this.operationService.operTeam(operCd);
+		
+//		model.addAttribute("operPntInfo", operPntInfo);
+//		model.addAttribute("operCd", operCd);
+		CustomUser user = (CustomUser) auth.getPrincipal();
+		EmpVO empVO = user.getUser();
+				
+		model.addAttribute("loginUser", empVO);
+		model.addAttribute("secSelectBox", empService.secSelectBox());
+		model.addAttribute("pntInfo", pntInfo);
+		model.addAttribute("operPntVS", operPntVS);
+		model.addAttribute("operPntInj", operPntInj);
+		model.addAttribute("operIns", operIns);
+		model.addAttribute("operTeam", operTeam);
+//		logger.info(pntInfo.toString());
+//		logger.info(operPntVS.toString());
+		logger.info(operIns.toString());
+		return "operation/detail";
+		
+	}
+	
+	@PostMapping("/graph")
+	@ResponseBody
+	public List<PntVSVO> PntGraph(Model model, @RequestParam String pntCd){
+		
+		List<PatientsVO> ddd = new ArrayList<PatientsVO>();
+		
+		List<PntVSVO> pntVS = this.operationService.pntVS(pntCd);
+		
+		logger.info(pntVS.toString());
+		
+		return pntVS;
+	}
+	@PostMapping("/search")
+	@ResponseBody
+	public List<PatientVO> pntSearch(Model model, @RequestParam String pntNm){
+		
+		List<PatientVO>pntSearch = this.operationService.pntSearch(pntNm);
+		
+		logger.info(pntSearch.toString());
+		return pntSearch;
+	}
+	
+	@PostMapping("/operCd")
+	@ResponseBody
+	public OperationVO operCd(Model model) {
+		OperationVO operCd = this.operationService.operCd();
+		
+		logger.info(operCd.toString());
+		
+		return operCd;
+	}
+	
+	@PostMapping("/writeOperPnt")
+	@ResponseBody
+	public PatientVO writeOperPnt(Model model, @RequestParam String pntCd) {
+		
+		PatientVO writeOperPnt = this.operationService.writeOperPnt(pntCd);
+		
+		logger.info(writeOperPnt.toString());
+		
+		return writeOperPnt;
+	}
+	
+	@PostMapping("/operTeam2")
+	@ResponseBody
+	public List<OperTeamVO> operTeam2(Model model
+									 ,@RequestParam(defaultValue="1", required=false) int currentPage
+									 ,@RequestParam(defaultValue="6", required=false) int size
+									 ,@RequestParam(required=false) String keyWord){
+		Map<String,Object>map = new HashMap<String, Object>();
+		map.put("keyWord",keyWord);
+		map.put("currentPage", currentPage);
+		map.put("size",size);
+		System.out.println("operTeam >> ");
+		System.out.println(map);
+		List<OperTeamVO> operTeam2 = this.operationService.operTeam2(map);
+		
+		logger.info(operTeam2.toString());
+		
+		return operTeam2;
+	}
+	
+	@PostMapping("/writeOperTeam")
+	@ResponseBody
+	public OperTeamVO writeOperTeam(Model model, @RequestParam String empCd) {
+		
+		OperTeamVO writeOperTeam = this.operationService.writeOperTeam(empCd);
+		
+		return writeOperTeam;
+		
+	}
+	
+	@PostMapping("/selectOperRoom")
+	@ResponseBody
+	public List<OperationVO> selectOperRoom(Model model){
+		
+		List<OperationVO> selectOperRoom = this.operationService.selectOperRoom();
+		logger.info("selectOperRoom>>" + selectOperRoom.toString());
+		return selectOperRoom;
+	}
+	@PostMapping("/selectSgCode")
+	@ResponseBody
+	public List<SgCodeVO>selectSgCode(){
+		List<SgCodeVO>selectSgCode = this.operationService.selectSgCode();
+		logger.info("selectSgCode>>" + selectSgCode.toString());
+		return selectSgCode;
+	}
+	
+	@PostMapping("/selectTreatCode")
+	@ResponseBody
+	public List<TreatVO> selectTreatCode(String pntNm) {
+		System.out.println(pntNm);
+		List<TreatVO> selectTreatCode = this.operationService.selectTreatCode(pntNm);
+		logger.info("selectTreatCode>>>>>>>" + selectTreatCode.toString());
+		
+		return selectTreatCode;
+	}
+	
+	@PostMapping("/selectDis")
+	@ResponseBody
+	public List<TreatVO> selectDis(String treatCd) {
+		List<TreatVO> list = this.operationService.selectDis(treatCd);
+		
+		return list;
+	}
+	
+	@PostMapping("/writeSgCode")
+	@ResponseBody
+	public SgCodeVO writeSgCode(String sgNm) {
+		SgCodeVO writeSgCode = this.operationService.writeSgCode(sgNm);
+		
+		return writeSgCode;
+	}
+	@PostMapping("/writeOpRoomNo")
+	@ResponseBody
+	public operationRoomVO writeOpRoomNo(int opRoomNo) {
+		operationRoomVO writeOpRoomNo = this.operationService.writeOpRoomNo(opRoomNo);
+		
+		return writeOpRoomNo;
+	}
+	
+	@PostMapping("/writeReservation")
+	@ResponseBody
+	public OperReservationVO writeResevation(Model model, @RequestParam Map<String, Object>map) {
+		OperReservationVO writeResevation = this.operationService.writeReservation(map);
+		
+		return writeResevation;
+	}
+	
+	@RequestMapping(value="/insertOperation",method = RequestMethod.POST, headers = {"Accept=application/json"})
+	@ResponseBody
+	public int insertOperation(@RequestBody Map<String,Object>param) {
+		List<Map<String, Object>> list = (List<Map<String, Object>>) param.get("param");
+		System.out.println(list.get(0).get("operCd"));
+		
+//		for(int i = 0; i<param.size();i++ ) {
+//			String operCd = (String)param.get("operCd");
+//			System.out.println(operCd);
+//		}
+		 return this.operationService.insertOperation(param);
+	}
+	
+	@PostMapping("/insertOperProc")
+	@ResponseBody
+	public int insertOperProc(Model model, @RequestParam Map<String, Object>map) {
+		return this.operationService.insertOperProc(map);
+	}
+	
+	@PostMapping("/operationList")
+	@ResponseBody
+	public List<OperationVO>operationList(Model model, @RequestParam String empNm){
+		
+		return this.operationService.operationList(empNm);
+	}
+	
+	@PostMapping("/updateOperation")
+	@ResponseBody
+	public int updateOperation(@RequestParam Map<String, Object>map) {
+		return this.operationService.updateOperation(map);
+	}
+	@PostMapping("/deleteOperation")
+	@ResponseBody
+	public int deleteOperation(String operCd) {
+		return this.operationService.deleteOperation(operCd);
+	}
+	
+	@GetMapping("/operationRecord")
+	public String recordPntList(Model model,Authentication auth) {
+		CustomUser user = (CustomUser) auth.getPrincipal();
+		EmpVO empVO = user.getUser();
+		logger.info("empCd>>>>"+empVO.getEmpCd());
+		List<OperationVO>recordPntList = this.operationService.recordPntList(empVO.getEmpCd());
+		model.addAttribute("recordPntList", recordPntList);
+		model.addAttribute("loginUser", empVO);
+		model.addAttribute("secSelectBox", empService.secSelectBox());
+		logger.info("recordPntList>>>>>>",recordPntList);
+		
+		return "operation/operationRecord";
+	
+	}
+	@PostMapping("/loadRecord")
+	@ResponseBody
+	public List<OperationVO> loadRecord(Model model,@RequestParam Map<String,String>map){
+		
+		
+		return this.operationService.loadRecord(map);
+	}
+}

@@ -1,0 +1,94 @@
+package kr.or.ddit.operation.mapper;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.json.simple.JSONObject;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.operation.vo.CalendarVO;
+import kr.or.ddit.operation.vo.ChartVO;
+import kr.or.ddit.operation.vo.OpcVO;
+import kr.or.ddit.operation.vo.OperDetailVO;
+import kr.or.ddit.operation.vo.OperReservationVO;
+import kr.or.ddit.operation.vo.OperTeamVO;
+import kr.or.ddit.operation.vo.OperationVO;
+import kr.or.ddit.operation.vo.PatientVO;
+import kr.or.ddit.operation.vo.PntVSVO;
+
+import kr.or.ddit.operation.vo.SgCodeVO;
+import kr.or.ddit.operation.vo.TreatVO;
+import kr.or.ddit.operation.vo.operationRoomVO;
+
+
+public interface OperationMapper {
+	
+	public List<OperationVO> selectOperList();
+	
+	public ArrayList<CalendarVO> operCalendar();
+	
+	public ArrayList<ChartVO> operChart();
+	
+	public OperDetailVO operPntInfo(String operCd);
+	
+	public ArrayList<OperDetailVO> operPntVS(String pntCd);
+	
+	public ArrayList<OperDetailVO> operPntInj(String pntCd);
+	
+	public ArrayList<OperDetailVO> operIns(String pntCd);
+	
+	public ArrayList<OperDetailVO> operTeam(String operCd);
+	
+	public OperDetailVO pntInfo(String pntCd);
+	
+	public ArrayList<PntVSVO> pntVS(String pntCd);
+	
+	public List<PatientVO>pntSearch(String pntNm);
+	
+	public OperationVO operCd();
+	
+	public PatientVO writeOperPnt(String pntCd);
+	
+	public List<OperTeamVO>operTeam2(Map<String,Object>map);
+	
+	public OperTeamVO writeOperTeam(String empCd);
+	
+	public List<OperationVO> selectOperRoom();
+	
+	public List<SgCodeVO> selectSgCode();
+	
+	public SgCodeVO writeSgCode(String sgNm);
+	
+	public operationRoomVO writeOpRoomNo(int opRoomNo);
+	
+	public OperReservationVO writeReservation(Map<String, Object>map);
+	
+	public List<TreatVO> selectTreatCode(String pntNm);
+	
+	public List<TreatVO> selectDis(String treatCd);
+	
+	public int insertOperation(Map<String,Object>map);
+	
+	public int insertOperProc(Map<String, Object>map);
+	
+	public int insertOperTeam(Map<String, Object>map);
+	
+	public List<OperationVO> operationList(String empNm);
+	
+	public int updateOperation(Map<String, Object>map);
+	
+	public int updateOperProc(Map<String, Object>map);
+	
+	public int deleteOperation(String operCd);
+	
+	public int deleteOperProc(String operCd);
+	
+	public List<OperationVO> recordPntList(String empCd);
+	
+	public List<OperationVO> loadRecord(Map<String, String>map);
+	
+	public List<OperationVO> loadRecordProc(String operCd);
+	
+	
+}

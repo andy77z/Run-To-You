@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+	<mapper namespace="kr.or.ddit.ent.mapper.EntMapper">
+	
+	<resultMap type="kr.or.ddit.ent.vo.WardVO" id="wardVOMap">
+		<result property="wardCls" column="WARD_CLS" />
+		<collection property="roomVO" resultMap="roomVOMap">			
+		</collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.ent.vo.RoomVO" id="roomVOMap">
+		<result property="roomCls" column="ROOM_CLS"/>
+		<result property="bed" column="BED"/>
+		<result property="pntCd" column="PNT_CD"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<result property="entDt" column="ENT_DT"/>
+		<result property="levDt" column="LEV_DT"/>
+		<result property="ingBed" column="ingBed"/>
+		<result property="allBed" column="allBed"/>
+	</resultMap>
+	
+	<!-- 입원 대기 중인 환자 리스트 출력 쿼리 -->
+	<select id="entPatientList" resultType="entVO" parameterType="String">	  
+		  SELECT PNT_CD, PNT_NM, PNT_PRNO, PNT_SEX, PNT_ADDR, PNT_HP, CHR_DR, HEIGHT, WEIGHT, SMK_YN, DRK_YN, PRGNT_YN, STATE_CD, PRTCR_NM, PRTCR_TEL, PNT_REG_DT, DEL_YN, ENABLED 
+  			FROM PATIENT P
+ 		   WHERE STATE_CD = 'PS9'
+		  <if test="keyword != null and keyword != ''">
+		    AND PNT_NM LIKE '%'||#{keyword}||'%'
+		  </if>
+ 		ORDER BY PNT_REG_DT DESC
+	</select>
+	
+	
+	<select id="entPatientCount" resultType="int">
+ 		 SELECT COUNT(PNT_NM) 
+		   FROM PATIENT P
+		  WHERE STATE_CD = 'PS9'
+	</select>
+	
+	
+	<!-- 입원 중인 환자 리스트 출력 쿼리 입원대기 코드  -->
+	<select id="entWardPntList" resultType="entVO" parameterType="hashMap">
+      SELECT P.TREAT_CD, T.RCPT_NO, T.EMP_CD, T.TREAT_OP, T.TREAT_DT,
+             P.ENT_CD, P.ENT_AMT, P.LISK_CD, P.DIET_CD, (SELECT DIET_NM FROM DIET WHERE P.DIET_CD = DIET_CD) AS dietNm, P.LEV_DT, P.ENT_DT, P.PNT_CD, P.PNT_NM, P.PNT_PRNO, P.PNT_SEX, P.PNT_ADDR, P.PNT_HP, P.CHR_DR, P.HEIGHT, P.WEIGHT,
+             P.SMK_YN, P.DRK_YN, P.PRGNT_YN, P.STATE_CD, P.PRTCR_NM, P.PRTCR_TEL, P.PNT_REG_DT, 
+             P.BED_NO, P.ROOM_AMT, P.WARD_CLS, P.ROOM_CLS, P.BED
+        FROM TREAT T RIGHT OUTER JOIN (SELECT E.ENT_CD, E.TREAT_CD, E.ENT_AMT, E.DIET_CD, E.LEV_DT, E.ENT_DT, E.LISK_CD, P.PNT_CD, P.PNT_NM, P.PNT_PRNO, P.PNT_SEX, P.PNT_ADDR, P.PNT_HP, P.CHR_DR, P.HEIGHT, P.WEIGHT,
+                                              P.SMK_YN, P.DRK_YN, P.PRGNT_YN, P.STATE_CD, P.PRTCR_NM, P.PRTCR_TEL, P.PNT_REG_DT, 
+                                              B.BED_NO,
+                                              B.ROOM_AMT,
+                                              B.WARD_CLS, B.ROOM_CLS, B.BED
+                                         FROM ENT E, PATIENT P, BED B
+                                        WHERE E.LEV_DT >= TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+                                          AND E.PNT_CD = P.PNT_CD
+                                          AND E.BED_NO = B.BED_NO
+                                          AND P.ENT_YN = 1
+                                          <if test="keyword != null and keyword != ''">
+                                          AND P.PNT_NM LIKE '%'||#{keyword}||'%'
+                                          </if>
+                                          <if test="liskCd != null and liskCd != ''">
+                                          AND E.LISK_CD = #{liskCd}
+                                          </if>
+                                       ) P
+          ON (T.PNT_CD = P.PNT_CD)
+	</select>
+	
+	<!-- 입원 환자 명수 가져오기 -->
+	<select id="entWardPntCount" resultType="int">
+      SELECT  COUNT(PNT_NM)
+        FROM TREAT T RIGHT OUTER JOIN (SELECT E.ENT_CD, E.DIET_CD, E.LEV_DT, E.ENT_DT, P.PNT_CD, P.PNT_NM, P.PNT_PRNO, P.PNT_SEX, P.PNT_ADDR, P.PNT_HP, P.CHR_DR, P.HEIGHT, P.WEIGHT,
+                                              P.SMK_YN, P.DRK_YN, P.PRGNT_YN, P.STATE_CD, P.PRTCR_NM, P.PRTCR_TEL, P.PNT_REG_DT, 
+                                              B.BED_NO,
+                                              B.ROOM_AMT,
+                                              B.WARD_CLS, B.ROOM_CLS, B.BED
+                                         FROM ENT E, PATIENT P, BED B
+                                        WHERE E.LEV_DT >= TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+                                          AND E.PNT_CD = P.PNT_CD
+                                          AND E.BED_NO = B.BED_NO
+                                          AND P.ENT_YN = 1
+                                       ) P
+          ON (T.PNT_CD = P.PNT_CD)
+	</select>
+	
+	<!-- 환자의 상세 정보를 가져오는 쿼리 -->
+	<select id="patientDetail" resultType="entVO" parameterType="String">
+		SELECT PNT_CD, PNT_NM, PNT_PRNO, PNT_SEX, PNT_ADDR, PNT_HP, CHR_DR, HEIGHT, WEIGHT, SMK_YN, DRK_YN, PRGNT_YN, STATE_CD, PRTCR_NM, PRTCR_TEL, PNT_REG_DT, DEL_YN, ENABLED 
+		  FROM PATIENT
+		  WHERE PNT_CD = #{pntCd}
+	</select>
+	
+	<!-- 일반 환자를 입원 대기 중 상태로 변경 -->
+	<update id="updatePntWaitEnt" parameterType="String">
+		UPDATE PATIENT SET STATE_CD = 'PS9' WHERE PNT_CD = #{pntCd}
+	</update>
+	
+	<!-- 클릭한 병동호실에 대한 정보와 묵고 있는 사람이 있는지 없는지 가져오는 쿼리 -->
+	<select id="getRoom" resultType="entVO" parameterType="String">
+	  SELECT B.BED_NO, B.WARD_CLS, B.ROOM_CLS, B.ROOM_AMT, B.BED, B.BED_ORDER
+			,E.ENT_CD, E.BED_NO, E.DIET_CD, E.PNT_CD, (SELECT PNT_NM FROM PATIENT P WHERE P.PNT_CD = E.PNT_CD) AS pntNm
+		    ,E.ENT_AMT, E.ENT_DT, E.LEV_DT
+		    ,(SELECT TREAT_OP FROM TREAT T WHERE T.PNT_CD = E.PNT_CD) AS treatOp
+		    ,(SELECT DIET_NM FROM DIET WHERE E.DIET_CD = DIET_CD) AS dietNm
+		FROM BED B LEFT OUTER JOIN ENT E
+		  ON (B.BED_NO = E.BED_NO)
+	    WHERE ROOM_CLS = #{roomCls}
+		ORDER BY 1
+	</select>
+		
+	<!-- 병동에 조직도를 위한 정보 가져오기 -->
+	<select id="getWard" resultMap="wardVOMap">
+	  SELECT  B.WARD_CLS
+             ,B.ROOM_CLS
+             ,COUNT(E.LEV_DT) AS ingBed
+             ,COUNT(*) AS allBed
+		FROM BED B LEFT OUTER JOIN ENT E
+		  ON (B.BED_NO = E.BED_NO)
+		GROUP BY B.ROOM_CLS, B.WARD_CLS
+        ORDER BY 1
+	</select>
+	
+	<!-- 침상의 위치값을 넣는 쿼리 -->
+	<update id="saveRoom" parameterType="hashMap">
+		UPDATE BED SET BED_ORDER = #{bedOrder} WHERE BED_NO = #{bedNo}
+	</update>
+	
+	<!-- 입원할 환자의 상태코드를 변경 -->
+	<update id="updateEnt" parameterType="String">
+		UPDATE PATIENT SET STATE_CD = 'PS10', ENT_YN = 1 WHERE STATE_CD = 'PS9' AND PNT_CD = #{pntCd}
+	</update>
+	
+	<!-- 입원한 환자를 ENT 테이블에 추가  -->	
+	<insert id="insertEnt" parameterType="hashMap">
+		INSERT INTO ENT(ENT_CD, TREAT_CD, PNT_CD, BED_NO, DIET_CD, ENT_AMT, ENT_DT, LEV_DT, LISK_CD)
+		     VALUES (('ENT'||LPAD((SELECT NVL(MAX(SUBSTR(ENT_CD,4,5)), 0) + 1 FROM ENT),5,0))
+		            ,(SELECT TREAT_CD FROM TREAT WHERE PNT_CD = #{pntCd})
+		            ,#{pntCd}
+		            ,#{bedNo}
+		            ,#{dietCd}
+		            ,((SELECT ROOM_AMT * (TO_DATE(#{levDt}) - TO_DATE(SYSDATE)) FROM BED WHERE BED_NO = #{bedNo}) + (SELECT DIET_AMT * (TO_DATE(#{levDt}) - TO_DATE(SYSDATE)) FROM DIET WHERE DIET_CD = #{dietCd}))
+		            ,TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+		            ,TO_CHAR(TO_DATE(#{levDt}), 'YYYY-MM-DD')
+		            ,#{liskCd}
+		      		)
+	</insert>
+	
+	<!-- 입원한 환자의 입원 여부를 Y로 1 로 바꾸는 작업 -->
+	<select id="updatePntToEnt">
+		UPDATE PATIENT SET ENT_YN = 1 WHERE PNT_CD = #{pntCd} AND ENT_YN = 0
+	</select>
+	
+	<!-- 입원환자의 상세정보를 가져오는 코드  -->
+	<select id="getEntDetail" parameterType="String" resultType="entVO">
+    SELECT T.TREAT_CD, T.RCPT_NO, T.EMP_CD, T.TREAT_OP, T.TREAT_DT
+           ,B.BED_NO, B.WARD_CLS, B.ROOM_CLS, B.ROOM_AMT, B.BED, B.BED_ORDER
+           ,E.ENT_CD, E.DIET_CD, E.ENT_AMT, E.ENT_DT, E.LEV_DT, E.LISK_CD
+           ,P.PNT_CD, P.PNT_NM, P.PNT_PRNO, P.PNT_SEX, P.PNT_ADDR, P.PNT_HP, P.CHR_DR, P.HEIGHT, P.WEIGHT, P.SMK_YN, P.DRK_YN, P.PRGNT_YN, P.STATE_CD
+           ,P.PRTCR_NM, P.PRTCR_TEL, P.PNT_REG_DT, P.DEL_YN, P.ENABLED, P.LOC_CD, P.ENT_YN
+           ,(SELECT DIET_NM FROM DIET WHERE E.DIET_CD = DIET_CD) AS dietNm
+      FROM ENT E, PATIENT P, BED B, TREAT T
+     WHERE E.PNT_CD = #{pntCd}
+       AND T.PNT_CD = E.PNT_CD
+       AND E.PNT_CD = P.PNT_CD
+       AND E.BED_NO = B.BED_NO
+	</select>
+
+	<!-- 환자의 입원간호일지를 가져오는 쿼리 -->
+	<select id="getCareNote" parameterType="String" resultType="entVO">
+	  	SELECT C.NOTE_NO, C.ENT_CD, C.EMP_CD, C.NOTE_CONTENT, C.NOTE_WRT_DT
+		      ,E.EMP_NM
+		      ,T.PNT_CD
+		      ,P.PNT_NM
+		  FROM ENT T, CARE_NOTE C, PATIENT P, EMP E
+		 WHERE C.ENT_CD = #{entCd}
+		   AND E.EMP_CD = C.EMP_CD
+		   AND T.ENT_CD = C.ENT_CD
+		   AND P.PNT_CD = T.PNT_CD
+	  ORDER BY NOTE_WRT_DT DESC
+	</select>
+	
+	<!-- 바이탈사인 정보 가져오기 -->
+	<select id="getVital" parameterType="String" resultType="entVO">
+        SELECT PNT_CD, VS_DT, VS_BP_MAX, VS_TMP, VS_BS, VS_BP_MIN 
+          FROM VS
+         WHERE PNT_CD = #{pntCd}
+      ORDER BY VS_DT DESC
+	</select>
+	<!-- 최근 바이탈 가져오기 -->
+	<select id="getCurrentVital" parameterType="String" resultType="entVO">
+		 SELECT PNT_CD
+		 		,TO_CHAR(TO_DATE(VS_DT, 'YYYYMMDDHH24MI:ss'), 'YYYY-MM-DD HH24:MI') AS vsDt
+		 		,VS_BP_MAX
+		 		,VS_BP_MIN
+		 		,VS_TMP
+		 		,VS_BS
+   		   FROM (SELECT PNT_CD, VS_DT, VS_BP_MAX, VS_BP_MIN, VS_TMP, VS_BS
+           		   FROM VS
+          		  WHERE PNT_CD = #{pntCd}
+       			  ORDER BY VS_DT DESC)
+ 		  WHERE ROWNUM &lt;= 1
+	</select>
+	
+	<!-- 바이탈사인 정보 넣기 -->
+	<insert id="insertVital" parameterType="hashMap">
+		INSERT INTO VS (PNT_CD, VS_DT, VS_BP_MAX, VS_BP_MIN, VS_TMP, VS_BS)
+           	   VALUES(#{pntCd}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'), #{vsBpMax}, #{vsBpMin}, #{vsTmp}, #{vsBs})
+	</insert>
+	
+	<!-- 입원환자 간호일지를 정보 넣기 -->
+	<insert id="insertCareNote" parameterType="hashMap">
+		INSERT INTO CARE_NOTE VALUES((SELECT NVL(MAX(NOTE_NO), 0) + 1 FROM CARE_NOTE), #{entCd}, #{empCd}, #{noteContent}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'))
+	</insert>
+	
+	<!-- 병동 근무 직원 가져오기 -->
+	<select id="getEntWorker" parameterType="hashMap" resultType="entVO">
+      SELECT T.EMP_CD, T.SEC_CD, T.EMP_NM, T.EMP_PRNO, T.EMP_SEX, T.EMP_ADDR, T.EMP_HP, T.POSITION, T.LCNS_NO, T.EMP_PIC, T.STATE_CD, T.HIRE_DATE, T.LEAVE_YN, T.ENABLED, T.EMP_MAIL, T.EMP_PW
+              ,T.DEPT_NM, T.SEC_NM
+        FROM (SELECT ROW_NUMBER() OVER(ORDER BY EMP_CD) RNUM, EMP_CD, E.SEC_CD, EMP_NM, EMP_PRNO, EMP_SEX, EMP_ADDR, EMP_HP, POSITION, LCNS_NO, EMP_PIC, STATE_CD, HIRE_DATE, LEAVE_YN, ENABLED, EMP_MAIL, EMP_PW
+                    ,DEPT_NM, SEC_NM
+          	    FROM EMP E, SEC S
+         	   WHERE E.SEC_CD = 'SEC00007'
+           	     AND E.SEC_CD = S.SEC_CD
+			    <if test="keyword != null and keyword != ''">
+			    	AND E.EMP_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+           	  ) T 
+          WHERE T.RNUM BETWEEN #{start} AND #{end}
+	</select>
+	
+	
+	<!-- 병동 근무 직원 갯수 세기 페이징을 위함-->
+	<select id="getEntWorkerCount" resultType="int" parameterType="String">
+		SELECT COUNT(EMP_CD) FROM EMP 
+		WHERE SEC_CD = 'SEC00007'
+		--<if test="keyword != null and keyword != ''">
+			AND EMP_NM LIKE '%'||#{keyword}||'%'
+		--</if>
+	</select>
+	
+	<!-- 병동 근무 직원 세기 -->
+	<select id="getNoPagingWorkerCount" resultType="int">
+	   SELECT COUNT(EMP_CD) 
+         FROM EMP 
+		WHERE SEC_CD = 'SEC00007'
+	</select>
+	
+	<!-- 병동 근무 직원 디테일 정보 가져오기 -->
+	<select id="getEntEmpDetail" resultType="entVO" parameterType="String">
+		SELECT EMP_CD, SEC_CD, EMP_NM, EMP_PRNO, EMP_SEX, EMP_ADDR, EMP_HP, POSITION, LCNS_NO, EMP_PIC, STATE_CD, HIRE_DATE, LEAVE_YN, ENABLED, EMP_MAIL, EMP_PW
+               ,(SELECT DEPT_NM FROM SEC WHERE SEC_CD = E.SEC_CD) AS deptNm
+               ,(SELECT SEC_NM FROM SEC WHERE SEC_CD = E.SEC_CD) AS secNm
+		  FROM EMP E
+		 WHERE EMP_CD = #{empCd}
+	</select>
+	
+	<!-- 다이어트 목록 가져오기 -->
+	<select id="getDietList" resultType="entVO">
+		SELECT DIET_CD, DIET_NM, DIET_AMT FROM DIET
+	</select>
+	
+	<!-- 퇴원일 수정 -->
+	<update id="updateLevDt" parameterType="hashMap">
+		UPDATE ENT SET LEV_DT = #{levDt}
+		              ,ENT_AMT = ((SELECT ROOM_AMT * (TO_DATE(#{levDt}) - TO_DATE(#{entDt})) FROM BED WHERE BED_NO = #{bedNo}) + (SELECT DIET_AMT * (TO_DATE(#{levDt}) - TO_DATE(#{entDt})) FROM DIET WHERE DIET_CD = #{dietCd}))
+		 WHERE ENT_CD = #{entCd}
+	</update>
+	
+	<!-- 중증도 수정 -->
+	<update id="updateLiskCd" parameterType="hashMap">
+		UPDATE ENT SET LISK_CD = #{liskCd} WHERE ENT_CD = #{entCd}
+	</update>
+	
+	<!-- 조기 퇴원하는 사람의 입원비를 현재 날짜 기준으로 계산하는 쿼리  퇴원시~~ -->
+	<update id="updateEntAmt" parameterType="hashMap">
+		UPDATE ENT SET
+            ENT_AMT = 
+		             (SELECT ENT_AMT - ((SELECT ROOM_AMT * (TO_DATE(#{levDt})
+		             - TO_DATE(SYSDATE)) FROM BED WHERE BED_NO = #{bedNo})
+		             + (SELECT DIET_AMT * (TO_DATE(#{levDt})
+		             - TO_DATE(SYSDATE)) FROM DIET WHERE DIET_CD = #{dietCd}))
+		             FROM ENT
+		             WHERE PNT_CD = #{pntCd})
+           ,LEV_DT = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+           ,BED_NO = null
+     WHERE PNT_CD = #{pntCd}
+	</update>
+	
+	<insert id="insertRcv" parameterType="String">
+		INSERT INTO RCV(RCV_CD, EMP_CD, RCV_AMT, RCV_DT, N_RCV_AMT, TREAT_CD) 
+		     VALUES(('RCV'||LPAD((SELECT NVL(MAX(SUBSTR(RCV_CD,4,5)), 0) + 1 FROM RCV),5,0))
+		                        ,null
+		                        ,(SELECT SUM(i.ITEMS_AMT) AS treatSum
+		                            FROM (SELECT T.TREAT_CD, P.PNT_CD, P.PNT_NM, T.TREAT_DT
+		                                    FROM PATIENT P, TREAT T
+		                                   WHERE P.STATE_CD = 'PS6'
+		                                     AND T.PNT_CD = P.PNT_CD) A, TREAT_ITEMS_AMT I
+		                           WHERE A.TREAT_CD = I.TREAT_CD
+		                             AND A.TREAT_CD = #{treatCd})
+		                        ,null
+		                        ,(SELECT SUM(i.ITEMS_AMT) AS treatSum
+		                            FROM (SELECT T.TREAT_CD, P.PNT_CD, P.PNT_NM, T.TREAT_DT
+		                                    FROM PATIENT P, TREAT T
+		                                   WHERE P.STATE_CD = 'PS6'
+		                                     AND T.PNT_CD = P.PNT_CD) A, TREAT_ITEMS_AMT I
+		                           WHERE A.TREAT_CD = I.TREAT_CD
+		                             AND A.TREAT_CD = #{treatCd})
+		                        ,#{treatCd})
+	</insert>
+	
+	<!-- 퇴원하는 사람 입원수납내역을 진료별항목금액에 쌓아놓는 쿼리. 입원비 -->
+	<insert id="insertTreatItemAmt" parameterType="hashMap">
+		INSERT INTO TREAT_ITEMS_AMT (TREAT_CD, ITEMS_CD, ITEMS_AMT, ITEMS_DT)
+        		VALUES (#{treatCd}, #{entCd}, (SELECT ROOM_AMT * (TO_DATE(#{levDt}) - TO_DATE(#{entDt})) FROM BED WHERE BED_NO = #{bedNo}), TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'))
+	</insert>
+
+	<!-- 퇴원하는 사람 입원수납내역을 진료별항목금액에 쌓아놓는 쿼리. 식비 -->
+	<insert id="insertTreatItemAmtDiet" parameterType="hashMap">
+		INSERT INTO TREAT_ITEMS_AMT (TREAT_CD, ITEMS_CD, ITEMS_AMT, ITEMS_DT)
+        		VALUES (#{treatCd}
+        				,#{dietCd}
+        				,(SELECT DIET_AMT * (TO_DATE(#{levDt}) - TO_DATE(#{entDt})) FROM DIET WHERE DIET_CD = #{dietCd})
+        				,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'))
+	</insert>
+	
+	<!-- 퇴원한 환자 상태 코드를 수납대기로 바꾸고 입원 여부를 0으로 하는 쿼리 -->
+	<update id="updateLeavingPnt" parameterType="hashMap">
+		UPDATE PATIENT SET STATE_CD = 'PS6', ENT_YN = 0 WHERE PNT_CD = #{pntCd}
+	</update>
+	
+	<!-- 약물 리스트 출력 -->
+	<select id="getDrugList" resultType="drugVO" parameterType="hashMap">
+		SELECT DRUG_CD
+	      	  ,BAIS_CD
+	      	  ,DRUG_NM
+	      	  ,ADMST
+	      	  ,CLS_CD
+	      	  ,DRUG_STND
+	      	  ,DRUG_UNIT
+	      	  ,DRUG_AMT
+	      	  ,DRUG_STOCK
+	 	 FROM DRUG
+	 	 <where>
+		 	 <if test="keyword != null and keyword != ''">
+			    AND ADMST LIKE '%'||#{keyword}||'%'
+			 </if>
+		 	 <if test="search != null and search != ''">
+			    AND DRUG_NM LIKE '%'||#{search}||'%'
+			 </if>
+		 </where>
+	</select>
+	
+	<!-- 환자의 투약 일정 등록 -->
+	<insert id="insertEntInject" parameterType="hashMap">
+		 INSERT INTO INJECT (INJ_CD, TREAT_CD, PNT_CD, DRUG_CD, EMP_CD, INJ_AMT, INJ_DT, INJ_CNT)
+		        VALUES
+			        (('INJ'||LPAD((SELECT NVL(MAX(SUBSTR(INJ_CD,4,5)), 0) + 1 FROM INJECT),5,0))
+			         ,(SELECT TREAT_CD FROM TREAT WHERE PNT_CD = #{pntCd})
+			         ,#{pntCd}
+			         ,#{drugCd}
+			         ,#{empCd}
+			         ,#{drugAmt}
+			         ,#{injDt}
+			         ,1)
+	</insert>
+	
+	<!-- 환자의 투약 일정을 얻어오는 -->
+	<select id="getDrugSchedule" parameterType="String" resultType="entVO">
+        		SELECT I.INJ_CD
+                      ,I.TREAT_CD
+                      ,I.PNT_CD
+                      ,I.DRUG_CD
+                      ,(SELECT DRUG_NM FROM DRUG D WHERE D.DRUG_CD = I.DRUG_CD) AS drugNm
+                      ,(SELECT ADMST FROM DRUG D WHERE D.DRUG_CD = I.DRUG_CD) AS admst
+                      ,(SELECT CD_NM FROM DRUG D,CM_CD C WHERE D.DRUG_CD = I.DRUG_CD AND TO_CHAR(D.CLS_CD) = C.CM_CD) AS cdNm
+                      ,(SELECT EMP_NM FROM EMP WHERE EMP_CD = I.EMP_CD) AS empNm
+                      ,I.EMP_CD
+                      ,I.DOSAGE
+                      ,I.INJ_AMT
+                      ,TO_CHAR(TO_DATE(I.INJ_DT, 'YYYYMMDDHH24MI'), 'YYYY-MM-DD HH24:MI') AS injDt
+                      ,I.INJ_CNT 
+                      ,E.LEV_DT
+                      ,E.ENT_DT
+                 FROM INJECT I, ENT E
+                WHERE I.PNT_CD = #{pntCd}
+                  AND E.PNT_CD = I.PNT_CD
+                 ORDER BY DRUG_CD DESC
+	</select>
+	<!-- 투약 일정 삭제 -->
+	<delete id="deleteInjection" parameterType="String">
+		 DELETE FROM INJECT WHERE INJ_CD = #{injCd}
+	</delete>
+	
+	<!-- 개별 업데이트를 위해 해당 투약 정보만 가져오는 쿼리 -->
+	<select id="getOneInjection" parameterType="String" resultType="entVO">
+		SELECT INJ_CD
+			  ,TREAT_CD
+			  ,PNT_CD
+			  ,DRUG_CD
+			  ,EMP_CD
+			  ,INJ_AMT
+			  ,INJ_DT 
+		 FROM INJECT WHERE INJ_CD = #{injCd}
+	</select>
+	
+	<!-- 투약 일정 갱신-->
+	<update id="updateInjection" parameterType="hashMap">
+		UPDATE INJECT SET INJ_DT = TO_CHAR(TO_DATE(#{injDt}, 'YYYY-MM-DD HH24MI'), 'YYYYMMDDHH24MI')
+						 ,DRUG_CD = #{drugCd}
+		 WHERE INJ_CD = #{injCd} 
+	</update>
+	
+	<!-- 입원 환자의 입원/퇴원일 얻어오기 -->
+	<select id="getEntLevDt" parameterType="String" resultType="entVO">
+			SELECT ENT_DT
+                  ,LEV_DT
+                  ,ENT_AMT 
+                  ,(SELECT PNT_NM FROM PATIENT WHERE PNT_CD = #{pntCd}) AS pntNm
+              FROM ENT
+             WHERE PNT_CD = #{pntCd}
+	</select>
+	
+	<!-- 알림 개수 얻어오기 -->
+	<select id="getNotiCount" parameterType="String" resultType="int">
+		SELECT COUNT(*) AS notiCnt
+		  FROM NOTIFICATION
+		 WHERE EMP_CD = #{empCd}
+		   AND CM_CD IN ('CN01', 'CN02', 'CN03')
+		   AND CHK_YN = 0
+	</select>
+	
+	<!-- 알림 목록 얻어오기 -->
+	<select id="getNotiContent" parameterType="String" resultType="entNotiVO">
+		SELECT CASE N.CM_CD
+			      WHEN 'CN01' THEN CONCAT((SELECT PNT_NM FROM PATIENT WHERE PNT_CD = N.PNT_CD), '환자 간호일지가 등록되었습니다.')
+			      WHEN 'CN02' THEN CONCAT((SELECT PNT_NM FROM PATIENT WHERE PNT_CD = N.PNT_CD), '환자 투약 10분 전입니다.')
+			      WHEN 'CN03' THEN CONCAT((SELECT PNT_NM FROM PATIENT WHERE PNT_CD = N.PNT_CD), '환자가 입원 했습니다.')
+			   END noti
+			  ,N.NOT_DT
+			  ,N.NOT_NO
+	     FROM NOTIFICATION N
+	    WHERE N.EMP_CD = #{empCd}
+	      AND N.CM_CD IN ('CN01', 'CN02', 'CN03')
+	      AND N.CHK_YN = 0
+	 ORDER BY N.NOT_DT DESC
+	</select>
+	
+	<update id="confirmNoti" parameterType="String">
+		UPDATE NOTIFICATION SET CHK_YN = 1 WHERE NOT_NO = ${notNo}
+	</update>
+	
+	<!-- 투약 10분전 알림 -->
+	<insert id="insertDrugNotiContent">
+	    begin
+	      FOR DATA_ROW2 IN (SELECT DISTINCT PNT_CD
+	                       FROM INJECT
+	                      WHERE ROUND((TO_DATE(INJ_DT,'YYYYMMDDHH24MISS')- SYSDATE) * 24 * 60) = 10)
+	      LOOP
+	        FOR DATA_ROW IN (SELECT EMP_CD FROM EMP WHERE SEC_CD = 'SEC00007')
+	        LOOP
+	        INSERT INTO NOTIFICATION(NOT_NO, EMP_CD, PNT_CD, CM_CD, NOT_YN, CHK_YN, NOT_URL, NOT_DT)
+	             VALUES((SELECT NVL(MAX(NOT_NO),0)+1 AS NOT_NO FROM NOTIFICATION), DATA_ROW.EMP_CD, DATA_ROW2.PNT_CD, 'CN02', 0, 0, '/ent/drugNoti', TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'));
+	        END Loop;
+	      END LOOP;
+		END;
+	</insert>
+	
+</mapper>

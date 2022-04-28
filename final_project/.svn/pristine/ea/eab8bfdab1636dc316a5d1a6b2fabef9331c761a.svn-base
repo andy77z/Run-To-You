@@ -1,0 +1,299 @@
+package kr.or.ddit.emp.controller;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.or.ddit.emp.service.EmpService;
+import kr.or.ddit.emp.util.ArticlePageSoobo;
+import kr.or.ddit.emp.vo.EmpVO;
+import kr.or.ddit.utils.UserUtil;
+
+/**
+ * @FileName : EmpController.java
+ * @Project : final_project
+ * @Date : 2022. 3. 17.
+ * @작성자 : LSW
+ * @변경이력 :
+ * @프로그램 설명 : 직원 컨트롤러
+ */
+@Controller
+@RequestMapping("/emp")
+public class EmpController {
+
+	private static final Logger log = LoggerFactory.getLogger(EmpController.class);
+
+	@Autowired
+	EmpService empService;
+	
+	/**
+	 * @param 
+	 * @return List<empVO>
+	 * 직원 전체 목록 출력
+	 */
+	@GetMapping("/homeAjax")
+	public String empSearchList(Model model
+								,@RequestParam(required = false) String secCd
+								,@Validated @ModelAttribute EmpVO empVO,
+						         @RequestParam(required = false,defaultValue = "1") int currentPage,
+						         @RequestParam(required = false,defaultValue = "10") int size,
+						         @RequestParam(required=false) String keyword){
+		log.info(" :::: 과별 직원 전체 목록 호출 :::: ");
+		int start = currentPage * size - (size - 1);
+	    int end = currentPage * size;
+	      
+	      // <key,value>
+	    Map<String, Object> map = new HashMap<String, Object>();
+	    map.put("start", start);
+	    map.put("end", end);
+	    map.put("secCd", secCd);
+	    map.put("keyword", keyword);
+		
+		List<EmpVO> selectEmpList = empService.selectDept(map);
+		int listCount = empService.listCount(keyword);
+		model.addAttribute("list", selectEmpList);
+		model.addAttribute("page", new ArticlePageSoobo(listCount, currentPage, size, 10));
+		
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "/emp/homeAjax";
+	}
+	
+	@GetMapping("/home")
+	public String empList(Model model
+			,@RequestParam(required = false) String secCd
+			,@Validated @ModelAttribute EmpVO empVO
+			,@RequestParam(defaultValue = "1") int currentPage
+			,@RequestParam(defaultValue = "10", required = false) int size
+			,@RequestParam(required=false) String keyword
+			,@RequestParam(required=false, defaultValue = "전체") String secNm){
+		
+		log.info("secCd : " + secCd);
+		log.info("currentPage : " + currentPage);
+		
+		log.info(" :::: 직원 전체 목록 호출 :::: ");
+		
+		// 가져올 직원 수 
+		int listCount = empService.listCount(keyword);
+		
+		int start = currentPage * size - (size - 1);
+		log.info("size :" + size);
+		
+		int end = currentPage * size;
+	    
+	    // <key,value>
+	    Map<String, Object> map = new HashMap<String, Object>();
+	    map.put("start", start);
+	    map.put("end", end);
+	    map.put("secCd", secCd);
+	    map.put("keyword", keyword);
+		
+		List<EmpVO> selectEmpList = empService.selectDept(map);
+		
+		model.addAttribute("list", selectEmpList);
+		
+//		int total = this.empService.listCount(map);
+//	    log.info("total : " + total);
+	    log.info("listCount : " + listCount);
+		
+		log.info("selectEmpList : " + selectEmpList);
+		
+		// 직원 등록 시, 최대 직원코드값 +1 구하기
+		String nextEmpCD = "EMP"+empService.nextEmpCD();
+		
+		if(nextEmpCD == "EMPnull") {
+			nextEmpCD = "EMP00001";
+		}
+		
+		
+	    
+	    
+	    model.addAttribute("page", new ArticlePageSoobo(listCount, currentPage, size, 5));
+//	    model.addAttribute("total", total);
+
+		model.addAttribute("nextEmpCD", nextEmpCD);
+		model.addAttribute("secNm", secNm);
+		
+		// WEB-INF/views/*/*.jsp 패턴으로 정의
+		return "emp/home";
+	}
+	
+	
+	/**
+	 * @param model
+	 * @return empVO
+	 * 직원 상세조회
+	 */
+	@PostMapping("/detail")
+	public String selectOne(Model model, @RequestParam(required = false) Map<String, String> map, @ModelAttribute EmpVO empVO) {
+		
+		log.info(" :::: 직원 상세보기 호출 :::: ");
+		
+		EmpVO empDetailVO = empService.selectOne(map.get("empCd"));
+		
+		model.addAttribute("empDetail", empDetailVO);
+		return "emp/detailEmp";
+	}
+	
+	
+	/**
+	 * @param model
+	 * @param empVO
+	 * @return int
+	 * 직원 등록
+	 */
+	@ResponseBody
+	@PostMapping("/create")
+	public int createEmp(@Validated @ModelAttribute EmpVO empVO,BindingResult result) {
+//		log.info("EmpVO : " + empVO);
+		log.info(" :::: 직원 등록하기 호출 :::: ");
+		
+ 				//검증 오류 발생
+				if(result.hasErrors()) {
+					
+					List<ObjectError> allErrors = result.getAllErrors();
+					List<ObjectError> globalErrors = result.getGlobalErrors();
+					List<FieldError> fieldErrors = result.getFieldErrors();
+					//validation 중에 어떤 오류가 나왔는지 확인..
+					for(int i=0;i<allErrors.size();i++) {
+						ObjectError objectError = allErrors.get(i);
+						log.info("objectError : " + objectError);
+					}
+					
+					for(ObjectError objectError : globalErrors) {
+						log.info("objectError : " + objectError);
+					}
+					
+					for(FieldError fieldError : fieldErrors) {
+						log.info("fieldError : " + fieldError.getDefaultMessage());
+					}
+					
+					//redirect(X) => 데이터를 보낼 수 없음
+					//forwaridng(O)
+					return 0;
+					}
+		
+					int res = empService.create(empVO);
+					
+					if(empVO.getSecCd().equals("SEC00001") 
+							|| empVO.getSecCd().equals("SEC00002")
+							|| empVO.getSecCd().equals("SEC00003")
+							|| empVO.getSecCd().equals("SEC00004")) {
+						res += empService.insertDoctor(empVO);
+					}else if(empVO.getSecCd().equals("SEC00008")
+							|| empVO.getSecCd().equals("SEC00009")) {
+						res += empService.insertNMdlTeam(empVO);
+					}else {
+						res += empService.insertNurse(empVO);
+					}
+					log.info("res : "  + res);
+					return res;
+			}
+	
+	/**
+	 * @param model
+	 * @param empCd
+	 * @return 삭제 성공 시 1
+	 * 직원 삭제 
+	 */
+	@ResponseBody
+	@GetMapping("/delete")
+	public int deleteEmp(Model model, @RequestParam String empCd) {
+//		log.info("empCd :" + empCd);
+		log.info(" :::: 직원 삭제하기 호출 :::: ");
+		
+		int result = empService.delete(empCd);
+		
+		return result; 
+	}
+	
+	/**
+	 * @param empVO
+	 * @return 수정 성공 시 1
+	 * 직원정보 수정
+	 */
+	@PostMapping("/update")
+	@ResponseBody
+	public int updateEmp(@Validated @ModelAttribute EmpVO empVO,BindingResult result) {
+//		log.info("empVO :" + empVO);
+		log.info(" :::: 직원 수정하기 호출 :::: ");
+		int res = empService.update(empVO);
+		
+		if(res > 0) {
+			log.info("성공");
+			
+		}
+		
+		return res;
+	}
+	
+	/**
+	 * @param empVO
+	 * @return 수정 성공 시 1
+	 * 직원정보 수정
+	 */
+	@PostMapping("/updateImg")
+	public String updateImg(@Validated @ModelAttribute EmpVO empVO,BindingResult result) {
+//		log.info("empVO :" + empVO);
+		log.info(" :::: 직원 프로필사진 수정 호출 :::: ");
+		
+		if(empVO.getUploadFile().getSize() > 0) {
+			MultipartFile uploadFile = empVO.getUploadFile();
+			
+			String uploadFolder = "D:\\A_TeachingMaterial\\7.LastProject\\workspace\\final_project\\src\\main\\webapp\\resources\\upload\\empPic\\";
+			
+			File uploadPath = new File(uploadFolder, UserUtil.getFolder());
+			
+			if(!uploadPath.exists()) { // 해당 경로가 없으면
+				uploadPath.mkdirs();
+			}
+			
+			UUID uuid = UUID.randomUUID();
+			String uploadFileName = uuid.toString() + "_" + uploadFile.getOriginalFilename();
+			empVO.setEmpPic("/resources/upload/empPic/" + UserUtil.getFolder() + "/" + uploadFileName);
+			
+			File saveFile = new File(uploadPath,uploadFileName);
+			
+			try {
+				uploadFile.transferTo(saveFile);
+			}catch(Exception e) {
+				log.info(e.getMessage());
+			}
+			int res = empService.updateImg(empVO);
+			return "redirect:/emp/home";
+		}
+		
+		return "redirect:/emp/home";
+	}
+	
+	@GetMapping("/searchDept")
+	@ResponseBody
+	public EmpVO searchDept(@RequestParam String secCd, @RequestParam String empCd) {
+		Map<String, String> map = new HashMap<String, String>();
+		log.info("map:::::::::::::::::::" + map);
+		map.put("secCd", secCd);
+		map.put("empCd", empCd);
+		
+		EmpVO vo = empService.searchDept(map);
+		log.info("vo:::::::::::::::::::" + vo);
+		return vo;
+	}
+}

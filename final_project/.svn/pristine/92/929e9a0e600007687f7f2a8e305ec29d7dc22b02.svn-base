@@ -1,0 +1,29 @@
+@charset "UTF-8";
+
+.stats{
+	cursor: pointer;
+	background-color: #e6e6fa;	
+}
+
+.stats:after{
+	transition: all 0.3s ease;
+}
+
+.stats:hover{
+	transform: scale(1.30);
+ 	background-color: #e6e6fa; 
+}
+
+.table-hover td{
+	cursor: pointer;	
+}
+
+.title{
+	text-align:center;
+	font-weight:bold;
+	background-color:#f6f6f6;
+	height: 5%;
+}
+.content{
+	height:5%;
+}

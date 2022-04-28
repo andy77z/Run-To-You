@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+	<mapper namespace="kr.or.ddit.receive.mapper.ReceiveMapper">
+	
+	<!-- 수납 대기 리스트 -->
+		<select id="getReceivePatient" resultType="receiveVO" parameterType="hashMap">
+			SELECT T.*
+			FROM ( 
+			WITH T AS(
+			 SELECT  P.PNT_CD, P.PNT_NM, P.PNT_HP
+			        , (SELECT MAX(V.TREAT_CD) FROM TREAT V WHERE V.PNT_CD = P.PNT_CD) TREAT_CD
+			        , (SELECT TO_CHAR(TO_DATE(MAX(S.TREAT_DT),'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') FROM TREAT S WHERE S.PNT_CD = P.PNT_CD) as treatDt
+			        ,(SELECT DIS_NM FROM DIG WHERE TREAT_CD = (SELECT MAX(TREAT_CD) FROM TREAT WHERE PNT_CD = P.PNT_CD)) as disNm
+			        ,R.RCV_AMT,R.N_RCV_AMT
+			        
+			   FROM PATIENT P, TREAT T, RCV R
+			  WHERE P.STATE_CD = 'PS6'
+			    AND P.PNT_CD = T.PNT_CD
+			    AND T.TREAT_CD = R.TREAT_CD
+			     <if test="keyword != null and keyword != ''">
+			        AND P.PNT_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+			)
+			SELECT T.PNT_CD, T.PNT_NM, T.PNT_HP, T.TREAT_CD, T.TREATDT, DISNM, SUM(T.RCV_AMT) as rcvAmt, SUM(N_RCV_AMT) as nRcvAmt,ROW_NUMBER() OVER (ORDER BY T.PNT_CD) as RNUM FROM T
+			GROUP BY T.PNT_CD, T.PNT_NM, T.PNT_HP, T.TREAT_CD, T.TREATDT, T.DISNM
+			) T
+			WHERE T.RNUM BETWEEN #{start} AND #{end}
+		</select>
+		
+		<!-- 수납 대기자 명수 카운트 -->
+		<select id="getReceivePatientCount" resultType="int" parameterType="String">
+			 SELECT  COUNT(P.PNT_CD)
+       		   FROM PATIENT P, TREAT T, RCV R
+      			  WHERE P.STATE_CD = 'PS6'
+        			AND P.PNT_CD = T.PNT_CD
+        			AND T.TREAT_CD = R.TREAT_CD
+		    <if test="keyword != null and keyword != ''">
+		    	AND P.PNT_NM LIKE '%'||#{keyword}||'%'
+		    </if>
+		</select>
+		
+		<!-- 수납 완료자 리스트 -->
+		<select id="getReceiveCommitPatient" resultType="receiveVO" parameterType="hashMap">
+		SELECT T.*
+           FROM (		  
+			WITH T AS(
+			 SELECT  P.PNT_CD, P.PNT_NM, P.PNT_HP
+			        , (SELECT MAX(V.TREAT_CD) FROM TREAT V WHERE V.PNT_CD = P.PNT_CD) TREAT_CD
+			        , (SELECT TO_CHAR(TO_DATE(MAX(S.TREAT_DT),'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') FROM TREAT S WHERE S.PNT_CD = P.PNT_CD) as treatDt
+			        ,(SELECT DIS_NM FROM DIG WHERE TREAT_CD = (SELECT MAX(TREAT_CD) FROM TREAT WHERE PNT_CD = P.PNT_CD)) as disNm
+			        ,R.RCV_AMT,R.N_RCV_AMT
+			        
+			   FROM PATIENT P, TREAT T, RCV R
+			  WHERE R.N_RCV_AMT = 0
+			    AND P.PNT_CD = T.PNT_CD
+			    AND T.TREAT_CD = R.TREAT_CD
+			    <if test="keyword != null and keyword != ''">
+			    	AND P.PNT_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+			)
+			SELECT T.PNT_CD, T.PNT_NM, T.PNT_HP, T.TREAT_CD, T.TREATDT, DISNM, SUM(T.RCV_AMT) rcvAmt, SUM(N_RCV_AMT) nRcvAmt,ROW_NUMBER() OVER (ORDER BY T.PNT_CD) as RNUM FROM T
+			GROUP BY T.PNT_CD, T.PNT_NM, T.PNT_HP, T.TREAT_CD, T.TREATDT, T.DISNM		  
+		  ) T
+		  WHERE T.RNUM BETWEEN #{start} AND #{end}
+		</select>
+		
+		<!-- 수납 완료자 카운트 -->
+		<select id="getReceiveCommitPatientCount" resultType="int" parameterType="String">
+			SELECT MAX(RNUM) FROM(WITH T AS(
+			 SELECT  P.PNT_CD, P.PNT_NM, P.PNT_HP
+			        , (SELECT MAX(V.TREAT_CD) FROM TREAT V WHERE V.PNT_CD = P.PNT_CD) TREAT_CD
+			        , (SELECT TO_CHAR(TO_DATE(MAX(S.TREAT_DT),'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') FROM TREAT S WHERE S.PNT_CD = P.PNT_CD) as treatDt
+			        ,(SELECT DIS_NM FROM DIG WHERE TREAT_CD = (SELECT MAX(TREAT_CD) FROM TREAT WHERE PNT_CD = P.PNT_CD)) as disNm
+			        ,R.RCV_AMT,R.N_RCV_AMT
+			   FROM PATIENT P, TREAT T, RCV R
+			  WHERE R.N_RCV_AMT = 0
+			    AND P.PNT_CD = T.PNT_CD
+			    AND T.TREAT_CD = R.TREAT_CD
+			    <if test="keyword != null and keyword != ''">
+			    	AND P.PNT_NM LIKE '%'||#{keyword}||'%'
+			    </if>
+			)
+			SELECT ROW_NUMBER() OVER (ORDER BY T.PNT_CD) as RNUM FROM T
+			GROUP BY T.PNT_CD, T.PNT_NM, T.PNT_HP, T.TREAT_CD, T.TREATDT, T.DISNM)
+		</select>
+		
+		<!-- 클릭한 환자의 수납금액 및 환자 정보 가져오기 -->
+		<select id="getPatientRCV" parameterType="hashMap" resultType="receiveVO">
+    SELECT P.PNT_CD, P.PNT_NM, P.CHR_DR
+           ,T.TREAT_CD, TO_CHAR(TO_DATE(T.TREAT_DT,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') as treatDt
+           ,(SELECT S.SEC_NM FROM EMP E, SEC S WHERE E.EMP_CD = T.EMP_CD AND E.SEC_CD = S.SEC_CD) AS secNm
+           ,R.RCV_CD, R.EMP_CD, R.RCV_AMT, R.RCV_DT, R.N_RCV_AMT
+           ,E.ENT_CD, E.BED_NO, E.DIET_CD, E.ENT_DT, E.LEV_DT
+           ,(SELECT DIET_NM FROM DIET WHERE DIET_CD = E.DIET_CD) AS dietNm
+           ,(SELECT ITEMS_AMT FROM TREAT_ITEMS_AMT WHERE ITEMS_CD = E.ENT_CD) AS entAmt
+       	   ,(SELECT DISTINCT ITEMS_AMT FROM TREAT_ITEMS_AMT WHERE ITEMS_CD = E.DIET_CD) AS dietAmt
+           ,(SELECT ITEMS_AMT / (TO_DATE(E.LEV_DT, 'YYYY-MM-DD') - TO_DATE(E.ENT_DT, 'YYYY-MM-DD') + 1) FROM TREAT_ITEMS_AMT WHERE ITEMS_CD = E.ENT_CD) AS entOnedayAmt
+      FROM PATIENT P, TREAT T, RCV R, ENT E
+     WHERE P.PNT_CD = #{pntCd}
+       AND T.TREAT_CD = #{treatCd}
+       AND R.TREAT_CD = T.TREAT_CD
+       AND E.TREAT_CD = T.TREAT_CD
+       AND E.ENT_CD = (SELECT ENT_CD FROM (SELECT ENT_CD, ENT_DT FROM ENT WHERE PNT_CD = #{pntCd} ORDER BY ENT_DT DESC) T WHERE ROWNUM &lt;= 1)		</select>
+		
+		<!-- 입원 안한 환자 -->
+		<select id="getPatientRCV2" parameterType="hashMap" resultType="receiveVO">
+    SELECT P.PNT_CD, P.PNT_NM, P.CHR_DR
+           ,T.TREAT_CD, TO_CHAR(TO_DATE(T.TREAT_DT,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') as treatDt
+           ,(SELECT S.SEC_NM FROM EMP E, SEC S WHERE E.EMP_CD = T.EMP_CD AND E.SEC_CD = S.SEC_CD) AS secNm
+           ,R.RCV_CD, R.EMP_CD, R.RCV_AMT, R.RCV_DT, R.N_RCV_AMT
+      FROM PATIENT P, TREAT T, RCV R
+     WHERE P.PNT_CD = #{pntCd}
+       AND T.PNT_CD = P.PNT_CD
+       AND T.TREAT_CD = #{treatCd}
+       AND R.TREAT_CD = T.TREAT_CD
+		</select>
+		
+		<!-- 질병 -->
+		<select id="getDigRCV" parameterType="String" resultType="receiveVO">
+			SELECT DIS_CD, DIS_NM
+	  		  FROM DIG
+	 		 WHERE TREAT_CD = #{treatCd}
+		</select>
+		
+		<!-- 검사 -->
+		<select id="getInspecRCV" parameterType="String" resultType="receiveVO">
+			SELECT S.SG_NM, S.SG_AMT
+			  FROM INSPECTION I, SG_CD S
+			 WHERE I.TREAT_CD = #{treatCd}
+			   AND I.SG_CD = S.SG_CD
+		</select>
+		
+		<!-- 투약 -->
+		<select id="getInjectRCV" parameterType="String" resultType="receiveVO">
+			SELECT INJ_AMT
+			       ,(SELECT DRUG_NM FROM DRUG WHERE DRUG_CD = I.DRUG_CD) AS drugNm
+			  FROM INJECT I
+			 WHERE TREAT_CD = #{treatCd}
+		</select>
+		
+		<!-- 처방 -->
+		<select id="getPrspRCV" parameterType="String" resultType="receiveVO">
+          	SELECT P.PRSP_DRUG_AMT
+			       ,(SELECT DRUG_NM FROM DRUG WHERE DRUG_CD = P.DRUG_CD) AS drugNm
+			  FROM PRESCRIPTION P
+			 WHERE TREAT_CD = #{treatCd}
+		</select>
+		
+		<!-- 수술 -->
+		<select id="getOperRCV" parameterType="String" resultType="receiveVO">
+			SELECT OPC_NM, OPC_AMT
+			  FROM OPERATION O, OPER_PROC P
+			 WHERE O.TREAT_CD = #{treatCd}
+			   AND O.OPER_CD = P.OPER_CD
+		</select>
+		
+		<!-- 수납 시에 -->
+		<update id="minusRCV" parameterType="hashMap">
+			UPDATE RCV 
+			       SET N_RCV_AMT = (N_RCV_AMT - #{nRcvAmt})
+			           ,RCV_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+			           ,EMP_CD = #{empCd}
+			       WHERE TREAT_CD = #{treatCd}
+		</update>
+		<update id="updateState7" parameterType="hashMap">
+			UPDATE PATIENT SET
+					STATE_CD = 'PS7'
+				WHERE PNT_CD = #{pntCd}
+		</update>
+		
+		
+		<select id="getTreatMemory" parameterType="String" resultType="receiveVO">
+		SELECT TREAT_CD
+		        ,PNT_CD
+      			,(SELECT PNT_NM FROM PATIENT WHERE PNT_CD = TREAT.PNT_CD) as pntNm
+      			,TO_CHAR(TO_DATE(TREAT_DT,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') as treatDt
+      			,(SELECT DIS_NM FROM DIG WHERE TREAT_CD = TREAT.TREAT_CD) as disNm
+      			,(SELECT CHR_DR FROM PATIENT WHERE PNT_CD = TREAT.PNT_CD) as chrDr
+      			,(SELECT N_RCV_AMT FROM RCV WHERE TREAT_CD = TREAT.TREAT_CD) as nRcvAmt
+		 FROM TREAT WHERE PNT_CD = #{pntCd}
+		</select>
+		
+	</mapper>

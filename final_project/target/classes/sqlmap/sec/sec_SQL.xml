@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.sec.mapper.SecMapper">
+
+	<resultMap type="kr.or.ddit.sec.vo.DeptVO" id="deptMap">
+		<result property="deptNm" column="DEPT_NM" />
+		<collection property="secVO" resultMap="secVOMap"></collection>
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.sec.vo.SecVO" id="secVOMap">
+		<result property="secCd" column="SEC_CD"/>
+		<result property="secNm" column="SEC_NM"/>
+		<result property="empCnt" column="EMP_CNT"/>
+	</resultMap>
+
+	<!-- 부서 조회하기 -->
+	<select id="selectAll" resultMap="deptMap">
+		SELECT A.DEPT_NM,A.SEC_CD,A.SEC_NM,COUNT(B.EMP_CD) AS EMP_CNT
+    	  FROM SEC A LEFT OUTER JOIN EMP B
+    	    ON(A.SEC_CD=B.SEC_CD)
+    	 WHERE SEC_YN=1
+    	 GROUP BY A.DEPT_NM,A.SEC_CD,A.SEC_NM
+      	 ORDER BY A.SEC_CD   
+	</select>
+	 
+	<!-- 부서 등록 시, 소속 코드값 +1 구하기 -->
+	<select id="nextSecCd" resultType="String">
+		SELECT LPAD(TO_NUMBER(SUBSTR(SEC_CD,4,5))+1,5,0) AS NEXT_CD
+		  FROM SEC
+		 WHERE SEC_CD = (SELECT MAX(SEC_CD) FROM SEC)
+	</select>	
+	
+	<!-- 부서등록 -->	
+	<insert id="insertSec" parameterType="secVO">
+		INSERT INTO SEC 
+           VALUES(#{secCd},#{deptNm},#{secNm},1)
+	</insert> 
+	
+	<!-- 부서별 과 조회 -->
+	<select id="searchSec" parameterType="String" resultType="secVO">
+		SELECT SEC_NM,SEC_CD,DEPT_NM
+          FROM SEC
+         WHERE DEPT_NM = #{deptNm}
+           AND SEC_YN=1
+	</select>
+
+	<!-- 부서명 변경 -->
+	<update id="updateDeptNm" parameterType="secVO">
+		UPDATE SEC 
+   		   SET dept_nm = #{newDeptNm}
+ 		 WHERE dept_nm = #{oldDeptNm}
+	</update>
+	
+	<!-- 과명 변경 -->
+	<update id="updateSecNm" parameterType="secVO">
+		UPDATE SEC
+  		   SET SEC_NM = #{newSecNm}
+ 	     WHERE dept_nm = #{deptNm}
+   	       AND SEC_NM = #{oldSecNm}
+	</update>
+	
+	<update id="deleteSec" parameterType="string">
+		UPDATE SEC
+		   SET SEC_YN=0
+		 WHERE SEC_CD=#{secCd}  
+	</update>
+	
+</mapper>

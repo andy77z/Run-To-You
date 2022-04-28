@@ -1,0 +1,92 @@
+package kr.or.ddit.receive.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.ent.util.ArticlePage;
+import kr.or.ddit.ent.vo.EntVO;
+import kr.or.ddit.receive.service.ReceiveService;
+
+@RequestMapping("/receive")
+@Controller
+public class ReceiveController {
+	
+	@Autowired
+	ReceiveService rcService;
+	
+	@GetMapping("/receiveHome")
+	private String receiveHome(Model model, @RequestParam(required = false) String keyword,
+											@RequestParam(defaultValue = "1") int currentPage, 
+											@RequestParam(required = false, defaultValue = "8") int size,
+											@RequestParam(defaultValue = "0") int color) {
+		
+		try {
+		    int start = currentPage * size - (size - 1);
+		    int end = currentPage * size;
+		    
+		    Map<String, Object> map = new HashMap<String, Object>();
+		    map.put("start", start);
+		    map.put("end", end);
+		    map.put("keyword", keyword);
+		    
+		    List<EntVO> list = rcService.getReceivePatient(map);
+		    int cnt = rcService.getReceivePatientCount(keyword);
+			
+		    model.addAttribute("color" , color);
+		    model.addAttribute("list", list);
+		    model.addAttribute("page", new ArticlePage(cnt, currentPage, size, 5));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "accessError";
+		}
+		return "receive/receiveHome";
+	}
+
+	@GetMapping("/receiveMemoryHome")
+	private String receiveMemoryHome(Model model, @RequestParam(required = false) String keyword,
+												  @RequestParam(defaultValue = "1") int currentPage, 
+												  @RequestParam(required = false, defaultValue = "8") int size,
+												  @RequestParam(defaultValue = "0") int color) {
+		
+		try {
+			int start = currentPage * size - (size - 1);
+			int end = currentPage * size;
+			
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("start", start);
+			map.put("end", end);
+			map.put("keyword", keyword);
+			
+			List<EntVO> list = rcService.getReceiveCommitPatient(map);
+			int cnt = rcService.getReceiveCommitPatientCount(keyword);
+			
+			model.addAttribute("color" , color);
+			model.addAttribute("list", list);
+			model.addAttribute("page", new ArticlePage(cnt, currentPage, size, 5));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "accessError";
+		}
+		return "receive/receiveMemoryHome";
+	}
+	
+	@GetMapping("/receiveing")
+	private String receiveing(@RequestParam String pntCd) {
+		return "receive/notiles/receiveing";
+	}
+	
+	@GetMapping("/receiveed")
+	private String receiveed(@RequestParam String pntCd) {
+		return "receive/notiles/receiveed";
+	}
+	
+	
+}

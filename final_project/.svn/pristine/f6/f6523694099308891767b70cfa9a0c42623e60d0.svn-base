@@ -1,0 +1,127 @@
+@charset "UTF-8";
+
+.modal-dialog {
+  max-width: 60%;
+  max-height: 85%;
+}
+.modal-dialog-slideout {
+  min-height: 85%;
+  margin: 80 0 0 auto;
+  background: #fff;
+}
+.modal.fade .modal-dialog.modal-dialog-slideout {
+  -webkit-transform: translate(100%, 0)scale(1);
+  transform: translate(100%, 0)scale(1);
+}
+.modal.fade.show .modal-dialog.modal-dialog-slideout {
+  -webkit-transform: translate(0, 0);
+  transform: translate(0, 0);
+  display: flex;
+  align-items: stretch;
+  -webkit-box-align: stretch;
+  height: 100%;
+}
+.modal.fade.show .modal-dialog.modal-dialog-slideout .modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.modal-dialog-slideout .modal-content {
+  border: 0;
+}
+.modal-dialog-slideout .modal-header,
+.modal-dialog-slideout .modal-footer {
+  height: 4rem;
+  display: block;
+}
+.pntnm{
+	font-weight: bolder; 
+	font-size: 20px; 
+	color: black;
+}
+.gender .age{
+	color: black;
+}
+.title{
+	margin-right: 50px;
+	color: gray;
+	width: 170px;
+}
+.titlea{
+	margin-right: 50px;
+	color: gray;
+	width: 350px;
+	word-break:normal;
+}
+.nti{
+	width: 60px;
+}
+
+.btnset{
+	position: absolute;
+	left: 41%;
+}
+.inp {
+ 	  border: 2px solid gainsboro;
+ 	  border-radius: 5px;
+ 	  height: 30px;
+   }
+.pnos {
+   	width: 70px;
+   }
+   .line {
+   	margin-top: 20px;
+   	margin-left: 20px;
+   }
+   
+   /* 스크롤바 설정*/
+.type2::-webkit-scrollbar{
+    width: 6px;
+}
+
+/* 스크롤바 막대 설정*/
+.type2::-webkit-scrollbar-thumb{
+    height: 17%;
+    background-color: rgba(33,133,133,1);
+    border-radius: 10px;  
+}
+
+/* 스크롤바 뒷 배경 설정*/
+.type2::-webkit-scrollbar-track{
+    background-color: rgba(33,133,133,0.33);
+}
+   li {
+   	margin-t: 20px;
+   	margin-left: 20px;
+   }
+   .btn_1 {
+   	background-color: #ad9aee;
+	border: #ad9aee;
+   }
+   #addr {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 350px;
+  height: 20px;
+}
+#symp{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-left: 38px;
+	width: 200px; 
+	height: 20px;
+}
+#treop{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-left: 80px;
+	width: 200px; 
+	height: 20px;
+}
+#inpstyle{
+	border: 2px solid gainsboro;
+    border-radius: 5px;
+    height: 30px;
+}

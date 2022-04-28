@@ -1,0 +1,55 @@
+package kr.or.ddit.receive.vo;
+
+import java.text.DecimalFormat;
+
+import org.springframework.stereotype.Repository;
+
+import lombok.Data;
+import lombok.ToString;
+
+@ToString
+@Data
+@Repository
+public class ReceiveVO {
+	
+	private String rcvCd;
+	private String empCd;
+	private int rcvAmt;
+	
+	public void setRcvAmt(String rcvAmt) {
+		rcvAmt.replaceAll("\\,", "");
+		this.rcvAmt = Integer.parseInt(rcvAmt);
+	}
+	public String getRcvAmt() {
+		DecimalFormat df = new DecimalFormat("###,###");
+		return df.format(String.valueOf(this.rcvAmt));
+	}
+	
+	private String rcvDt;
+	private int nRcvAmt;
+	
+	public void setNRcvAmt(String nRcvAmt) {
+		nRcvAmt.replaceAll("\\,", "");
+		this.nRcvAmt = Integer.parseInt(nRcvAmt);
+	}
+	public String getNRcvAmt() {
+		DecimalFormat df = new DecimalFormat("###,###");
+		return df.format(String.valueOf(this.nRcvAmt));
+	}
+	
+	private String treatCd;
+	private String itemsCd;
+	private int itemsAmt;
+	
+	public void setItemsAmt(String itemsAmt) {
+		itemsAmt.replaceAll("\\,", "");
+		this.itemsAmt = Integer.parseInt(itemsAmt);
+	}
+	public String getItemsAmt() {
+		DecimalFormat df = new DecimalFormat("###,###");
+		return df.format(String.valueOf(this.itemsAmt));
+	}
+	
+	private String itemsDt;
+	
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.inspection.mapper.InspectionMapper">
+	<resultMap type="patientsVO" id="inspWaitMap">
+		<id property="pntCd" column="PNT_CD"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<result property="pntPrno" column="PNT_PRNO"/>
+		<result property="age" column="AGE"/>
+		<result property="pntSex" column="PNT_SEX"/>
+		<result property="pntAddr" column="PNT_ADDR"/>
+		<result property="pntHp" column="PNT_HP"/>
+		<result property="chrDr" column="CHR_DR"/>
+		<result property="height" column="HEIGHT"/>
+		<result property="weight" column="WEIGHT"/>
+		<result property="smkYn" column="SMK_YN"/>
+		<result property="drkYn" column="DRK_YN"/>
+		<result property="prgntYn" column="PRGNT_YN"/>
+		<result property="stateCd" column="STATE_CD"/>
+		<result property="prtcrNm" column="PRTCR_NM"/>
+		<result property="prtcrTel" column="PRTCR_TEL"/>
+		<result property="pntRegDt" column="PNT_REG_DT"/>
+		<result property="locCd" column="LOC_CD"/>
+		<result property="entYn" column="ENT_YN"/>
+		<result property="treatCd" column="TREAT_CD"/>
+		<result property="empNm" column="EMP_NM"/>
+		<result property="secNm" column="SEC_NM"/>
+		<result property="rownum" column="ROWNUM"/>
+		<collection property="inspectionVO" resultMap="inspectionMap"></collection>
+		
+	</resultMap>
+	
+	<resultMap type="inspectionVO" id="inspectionMap">
+		<result property="inspCd" column="INSP_CD"/>
+		<result property="inspTypeCd" column="INSP_TYPE_CD"/>
+		<result property="inspNm" column="INSP_NM"/>
+		<result property="inspAmt" column="INSP_AMT"/>
+	</resultMap>
+
+	<select id="inspWaitList" resultMap="inspWaitMap" parameterType="string">
+		SELECT A.PNT_CD
+		      ,A.PNT_NM
+		      ,A.PNT_PRNO
+		      ,EXTRACT(YEAR FROM SYSDATE) - (DECODE(SUBSTR(A.PNT_PRNO, 8, 1), '1', '19', '2', '19', '20') || SUBSTR(A.PNT_PRNO, 1, 2)) +1 AS AGE
+		      ,A.PNT_SEX
+		      ,A.PNT_ADDR
+		      ,A.PNT_HP
+		      ,A.CHR_DR
+		      ,A.HEIGHT
+		      ,A.WEIGHT
+		      ,A.SMK_YN
+		      ,A.DRK_YN
+		      ,A.PRGNT_YN
+		      ,A.STATE_CD
+		      ,A.PRTCR_NM
+		      ,A.PRTCR_TEL
+		      ,A.PNT_REG_DT
+		      ,A.LOC_CD
+		      ,A.ENT_YN
+		      ,C.TREAT_CD
+		      ,D.EMP_NM
+		      ,E.SEC_NM
+		      ,ROWNUM
+		      ,B.INSP_CD
+		      ,F.INSP_TYPE_CD
+		      ,F.INSP_NM
+		      ,F.INSP_AMT
+		 FROM PATIENT A, INSPECTION B, TREAT C, EMP D, SEC E, INSP_TYPE F
+		WHERE A.PNT_CD=C.PNT_CD
+		  AND C.TREAT_CD=B.TREAT_CD
+		  AND C.EMP_CD=D.EMP_CD
+		  AND D.SEC_CD=E.SEC_CD
+		  AND B.INSP_TYPE_CD=F.INSP_TYPE_CD
+		  AND SUBSTR(C.TREAT_DT,1,8)=TO_CHAR(SYSDATE,'YYYYMMDD')
+		  AND A.STATE_CD='PS8'
+		  AND B.EMP_CD=#{empCd}
+	</select>
+	<select id="inspList" resultType="inspectionVO">
+		SELECT B.INSP_NM
+			 , ROWNUM
+  		  FROM INSPECTION A, INSP_TYPE B
+ 		 WHERE A.INSP_TYPE_CD = B.INSP_TYPE_CD
+   		   AND A.TREAT_CD =#{treatCd} 
+	</select>
+	
+	<insert id="insertInspFile" parameterType="inspectionVO" >
+   INSERT INTO CHART_FILE(
+      FILE_NO
+      , TREAT_CD
+      , BASE64IMG
+      , FILE_CLS
+      , FILE_NM
+      , FILE_REG_DT
+      , EMP_CD
+   ) VALUES ( 
+      (SELECT NVL(MAX(FILE_NO), 0) +1 FROM CHART_FILE)
+      , #{treatCd}
+      , #{base64img}
+      , #{inspNm}
+      , #{inspNm}||'_'||(SELECT NVL(MAX(FILE_NO), 0) +1 FROM CHART_FILE)
+      , #{inspDt}
+      , #{empCd}
+   )
+</insert>
+</mapper>

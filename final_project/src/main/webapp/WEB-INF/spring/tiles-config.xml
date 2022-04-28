@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<!-- Tiles 설정 -->
+<tiles-definitions>
+    
+   	<!-- main layout 설정 -->
+    <definition name="tiles-layout" template="/WEB-INF/views/tiles/index.jsp">
+        <put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp" />
+        <put-attribute name="aside" value="/WEB-INF/views/tiles/aside.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/tiles/footer.jsp" />
+        <put-attribute name="body" value="" />
+    </definition>
+    
+    <definition name="tiles-layout-ajax" template="/WEB-INF/views/tiles/indexAjax.jsp">
+        <put-attribute name="body" value="" />
+    </definition>
+ 	
+    <!-- 컨트롤러 view Return Role -->
+    <!-- /를 기준으로 앞쪽의 *과 {1}, 뒤쪽의 *과 {2}가 매칭되어 조립된다. -->
+	<definition name="*/*" extends="tiles-layout">
+		<!-- {1}은 최상위 메뉴 ex) bbs, login... {2}는 세부기능 ex) list, detail, form... -->
+      <put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp" />
+    </definition>
+
+	<definition name="*" extends="tiles-layout">
+		<!-- {1}은 최상위 메뉴 ex) bbs, login... {2}는 세부기능 ex) list, detail, form... -->
+      <put-attribute name="body" value="/WEB-INF/views/{1}.jsp" />
+    </definition>
+    
+    <!-- Ajax용  -->
+    <definition name="ajax/*/*" extends="tiles-layout-ajax">
+		<!-- {1}은 최상위 메뉴 ex) bbs, login... {2}는 세부기능 ex) list, detail, form... -->
+      <put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp" />
+    </definition>
+    
+</tiles-definitions>

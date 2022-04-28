@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.reservation.mapper.ReservationMapper">
+	<resultMap type="empVO" id="docRsvtMap">
+       <id property="empCd" column="EMP_CD"/>
+       <result property="empNm" column="EMP_NM"/>
+       <result property="empPic" column="EMP_PIC"/>
+       <result property="major" column="MAJOR"/>
+       <collection property="reservation" resultMap="reservationMap"></collection>
+	</resultMap>
+	
+	<resultMap type="reservationVo" id="reservationMap">
+		<id property="rsvtNo" column="RSVT_NO"/>
+		<result property="pntCd" column="PNT_CD"/>
+		<result property="rcptYn" column="RCPT_YN"/>
+		<result property="stateCd" column="STATE_CD"/>
+		<result property="rsvtDt" column="RSVT_DT"/>
+		<result property="symptoms" column="SYMPTOMS"/>
+		<result property="pntNm" column="PNT_NM"/>
+		<result property="pntPrno" column="PNT_PRNO"/>
+		<result property="pntHp" column="PNT_HP"/>
+	</resultMap>
+	
+	<!-- 신규 예약 -->
+	<insert id="addreservation" parameterType="reservationVo">
+		INSERT INTO RESERVATION(RSVT_NO, PNT_CD
+                                , EMP_CD, SYMPTOMS
+                                , RSVT_DT, RSVT_REG_DT
+                                , RCPT_YN
+                               )
+                               
+        VALUES((SELECT 'RSV' || LPAD(NVL(MAX(SUBSTR(RSVT_NO, 4, 5)), 0) +1, 5, 0) FROM RESERVATION),#{pntCd}
+        		,#{empCd},#{symptoms}
+        		,REPLACE(#{rsvDate}, '-','')||REPLACE(#{rsvTime}, ':',''),TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'), 0)
+	</insert>
+	
+	<!-- 예약 완료상태 표시 -->
+	<update id="compreservation" parameterType="String">
+		UPDATE PATIENT
+		SET STATE_CD ='PS1'
+		WHERE PNT_CD=#{pntCd}
+	</update>
+	
+	<!-- 예약 취소상태 표시 -->
+	<update id="cancelreservation" parameterType="String">
+		UPDATE PATIENT
+		SET STATE_CD ='PS2'
+		WHERE PNT_CD=#{pntCd}
+	</update>
+
+	<!-- 예약 상태 변경(접수완료 후 대기) -->
+	<update id="waiting" parameterType="String">
+		UPDATE PATIENT
+		SET STATE_CD ='PS3'
+		WHERE PNT_CD=#{pntCd}
+	</update>
+	<!-- 예약 상태 변경(접수완료 후 접수여부) -->
+	<update id="rsvcheck" parameterType="reservationVo">
+		UPDATE RESERVATION
+		SET RCPT_YN ='1'
+		WHERE RSVT_NO=#{rsvtNo}
+	</update>
+	
+	<!-- 접수 테이블에 INSERT -->
+	<insert id="insertRecept" parameterType="kr.or.ddit.reservation.vo.ReceptVO">
+		INSERT INTO RECEPT	
+		VALUES((SELECT 'RCT' || LPAD(NVL(MAX(SUBSTR(RCPT_NO, 4, 5)), 0) +1, 5, 0) FROM RECEPT)
+			   ,#{rsvtNo},#{empCd},TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'))
+	</insert>
+	
+	<!-- 예약 수정 -->
+	<update id="modireservation" parameterType="reservationVo">
+		UPDATE RESERVATION
+		SET RSVT_DT=TO_CHAR(TO_DATE(#{rsvDate}), 'YYYYMMDD')||#{rsvTime}
+			, SYMPTOMS=#{symptoms}
+		WHERE RSVT_NO = #{rsvtNo}
+	</update>
+	
+	<!-- 예약된 시간 찾아오기 (수정) -->
+	<select id="restime" parameterType="hashMap" resultType="reservationVo">
+		SELECT TO_CHAR(TO_DATE(RSVT_DT,'YYYYMMDDHH24MISS'), 'HH24:MI') AS rsvTime
+		FROM RESERVATION
+		WHERE TO_CHAR(TO_DATE(RSVT_DT,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD')=#{rsvDate}
+		AND EMP_CD=#{empCd}
+	</select>
+	
+	<!-- 예약 삭제 -->
+	<delete id="resdelete" parameterType="String">
+		DELETE FROM RESERVATION 
+		WHERE RSVT_NO=#{rsvtNo}
+	</delete>
+	
+	<!-- 특정 환자 예약정보 -->
+	<select id="reservlist" parameterType="String" resultType="reservationVo">
+		SELECT R.RSVT_NO, R.PNT_CD
+               , R.EMP_CD, R.SYMPTOMS
+               , R.RSVT_DT, R.RSVT_REG_DT, R.RCPT_YN
+               , P.PNT_NM
+               , E.EMP_NM
+        FROM PATIENT P, RESERVATION R, EMP E
+        WHERE P.PNT_CD=R.PNT_CD
+        AND R.EMP_CD=E.EMP_CD
+        AND R.PNT_CD=#{pntCd}
+        ORDER BY R.RSVT_DT desc
+	</select>
+	
+	<!-- fullcalendar 예약목록 출력  -->
+	<select id="allList" resultType="reservationVo">
+		SELECT R.RSVT_NO, R.PNT_CD
+               , R.EMP_CD, R.SYMPTOMS
+               , R.RSVT_DT
+               , TO_CHAR(TO_DATE(R.RSVT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS rsvDate
+               , TO_CHAR(TO_DATE(R.RSVT_DT, 'YYYYMMDDHH24MISS'), 'HH24:MI:SS') AS rsvTime
+               , R.RSVT_REG_DT
+               , P.PNT_NM
+               , E.EMP_NM
+        FROM PATIENT P, RESERVATION R, EMP E
+        WHERE P.PNT_CD=R.PNT_CD
+        AND R.EMP_CD=E.EMP_CD
+	</select>
+	
+	<!-- 의사별 예약목록 출력  -->
+	<select id="docList" parameterType="String" resultType="reservationVo">
+		SELECT R.RSVT_NO, R.PNT_CD
+               , R.EMP_CD, R.SYMPTOMS
+               , R.RSVT_DT
+               , TO_CHAR(TO_DATE(R.RSVT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') AS rsvDate
+               , TO_CHAR(TO_DATE(R.RSVT_DT, 'YYYYMMDDHH24MISS'), 'HH24:MI:SS') AS rsvTime
+               , R.RSVT_REG_DT
+               , P.PNT_NM
+               , E.EMP_NM
+        FROM PATIENT P, RESERVATION R, EMP E
+        WHERE P.PNT_CD=R.PNT_CD
+        AND R.EMP_CD=E.EMP_CD
+        AND R.EMP_CD=#{empCd}
+        ORDER BY R.RSVT_DT ASC
+	</select>
+	
+	<!-- 진료과목 리스트 출력 -->
+	<select id="majorList" resultType="patientsempVo">
+		SELECT MAJOR
+        FROM DOCTOR
+        GROUP BY MAJOR
+	</select>
+	
+	<!-- 의사 출력 -->
+	<select id="doctor" parameterType="String" resultType="patientsempVo">
+		SELECT E.EMP_CD, E.EMP_NM, D.MAJOR
+		FROM EMP E, DOCTOR D
+		WHERE D.EMP_CD = E.EMP_CD
+		AND D.EMP_CD = #{empCd}
+	</select>
+	
+	<!-- 진료과목 별 의사 리스트 출력 -->
+	<select id="doctorList" parameterType="String" resultType="patientsempVo">
+		SELECT E.EMP_CD, E.EMP_NM, D.MAJOR
+		FROM EMP E, DOCTOR D
+		WHERE D.EMP_CD = E.EMP_CD
+		<if test="major != '전체부서'">
+		AND D.MAJOR =#{major}
+		</if>
+	</select>
+	
+	<!-- 진료과목 별 의사 및 예약 리스트 출력 -->
+	<select id="resdoctorList" parameterType="String" resultMap="docRsvtMap">
+		SELECT E.EMP_CD, E.EMP_NM, E.EMP_PIC, D.MAJOR, R.RSVT_NO
+       , R.PNT_CD, R.RSVT_DT, R.SYMPTOMS, R.RCPT_YN
+       , P.PNT_NM,P.PNT_PRNO,P.PNT_HP, P.STATE_CD
+		FROM EMP E, DOCTOR D, RESERVATION R, PATIENT P
+		WHERE D.EMP_CD = E.EMP_CD
+        AND E.EMP_CD = R.EMP_CD(+)
+        AND R.PNT_CD = P.PNT_CD
+        <if test="major!=null and major!=''">
+        AND D.MAJOR=#{major}
+        </if>
+		AND TO_CHAR(SYSDATE, 'YYYYMMDD') <![CDATA[<=]]> SUBSTR(R.RSVT_DT, 0,8)
+		AND TO_CHAR(TO_DATE(R.RSVT_DT, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+		ORDER BY R.RSVT_DT ASC
+	</select>
+	
+	<!-- 오늘 예약환자 (홈화면) -->
+	<select id="rsvToday" parameterType="string" resultType="reservationVo">
+		SELECT R.RSVT_NO
+			  ,R.EMP_CD
+			  ,R.PNT_CD
+			  ,R.RSVT_DT
+			  ,R.RSVT_REG_DT
+			  ,R.SYMPTOMS
+			  ,P.PNT_NM
+		  FROM RESERVATION R, PATIENT P
+		 WHERE R.PNT_CD=P.PNT_CD
+		   AND R.EMP_CD=#{empCd}
+		   AND TO_CHAR(SYSDATE, 'YYYYMMDD') = SUBSTR(R.RSVT_DT, 0,8)
+	</select>
+	
+	<!-- 진료과목 별 의사 및 예약 리스트 출력 -->
+	<select id="majorresList" parameterType="String" resultMap="docRsvtMap">
+		SELECT E.EMP_CD, E.EMP_NM, D.MAJOR, R.RSVT_NO
+       , R.PNT_CD, R.RSVT_DT, R.SYMPTOMS, R.RCPT_YN
+       , P.PNT_NM,P.PNT_PRNO,P.PNT_HP
+		FROM EMP E, DOCTOR D, RESERVATION R, PATIENT P
+		WHERE D.EMP_CD = E.EMP_CD
+        AND E.EMP_CD = R.EMP_CD(+)
+        AND R.PNT_CD = P.PNT_CD
+        <if test='!major.equals("전체부서")'>
+		AND D.MAJOR = #{major}
+        </if>
+		ORDER BY R.RSVT_DT ASC
+	</select>
+	
+	<!-- 예약내역 찾기 -->
+	<select id="findres" parameterType="String" resultType="reservationVo">
+		SELECT E.EMP_CD, E.EMP_NM, R.RSVT_NO
+       		   , R.PNT_CD, R.SYMPTOMS, P.PNT_NM
+       	FROM EMP E, RESERVATION R, PATIENT P
+        WHERE R.EMP_CD = E.EMP_CD
+        AND R.PNT_CD = P.PNT_CD
+        AND R.RSVT_NO=#{rsvtNo}
+	</select>
+	
+	<!-- 환자 목록 -->
+	<select id="patientsList" resultType="patientsVo">
+		SELECT PNT_CD, PNT_NM
+               , PNT_PRNO, PNT_SEX
+               , CASE WHEN PNT_ADDR LIKE '%@_' ESCAPE '@' THEN REPLACE(PNT_ADDR, '_', ' ')
+                      ELSE PNT_ADDR
+                      END AS PNT_ADDR
+               , PNT_HP
+               , CHR_DR, HEIGHT
+               , WEIGHT, SMK_YN
+               , DRK_YN, PRGNT_YN
+               , STATE_CD, PRTCR_NM
+               , PRTCR_TEL, PNT_REG_DT
+               , DEL_YN, ENABLED
+		FROM PATIENT
+	</select>
+	
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.ddit.inject.mapper.InjectMapper">
+	
+	<!-- 환자 검색 시  -->
+	<select id="selectPatient" parameterType="String" resultType="patientVO">
+		SELECT pnt_cd,pnt_nm,pnt_prno,pnt_hp
+				,CASE pnt_sex
+	      			WHEN 'F' THEN '여'
+	      			WHEN 'M' THEN '남'
+	      			END AS pnt_sex
+		  FROM patient
+		  <if test="keyword!=null and keyword!=''">
+		 WHERE  (pnt_nm LIKE '%'||#{keyWord}||'%'
+	          OR     pnt_prno LIKE '%'||#{keyWord}||'%'
+	         )  
+	      </if>  
+	</select>
+	
+	<!-- 환자코드로 투약내역 조회 -->
+	<select id="injectDetail" parameterType="map" resultType="injectVO">
+		 SELECT A.INJ_CD,A.TREAT_CD,A.PNT_CD,A.DRUG_CD,A.EMP_CD,A.DOSAGE,A.INJ_AMT,A.INJ_DT,A.INJ_CNT,
+                B.BAIS_CD,B.DRUG_NM,B.ADMST,B.CLS_CD,B.DRUG_STND,B.DRUG_UNIT,B.DRUG_AMT,B.DRUG_STOCK,C.EMP_NM
+		   FROM INJECT A, DRUG B, EMP C
+          WHERE A.DRUG_CD = B.DRUG_CD
+            AND A.EMP_CD = C.EMP_CD
+            <if test="pntCd!=null and pntCd!=''">
+            AND A.PNT_CD = #{pntCd}
+            </if>
+            <if test="injCd!=null and injCd!=''">
+            AND A.INJ_CD = #{injCd}
+            </if>
+            <if test="sDate!=null and sDate!='' and eDate!=null and eDate!=''">
+            AND A.INJ_DT BETWEEN #{sDate} AND #{eDate}
+            </if>
+       ORDER BY A.INJ_DT DESC 
+	</select>
+</mapper>

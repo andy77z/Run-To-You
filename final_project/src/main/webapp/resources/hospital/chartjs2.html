@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zxx">
+
+<!-- Mirrored from demo.dashboardpack.com/hospital-html/chartjs.html by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 05 Mar 2022 06:58:35 GMT -->
+<!-- Added by HTTrack -->
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<!-- /Added by HTTrack -->
+<head>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<title>Hospital</title>
+
+
+<link rel="stylesheet" href="css/bootstrap.min.css" />
+<link rel="stylesheet" href="vendors/font_awesome/css/all.min.css" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/colors/default.css" id="colorSkinCSS">
+
+</head>
+<body class="crm_body_bg">
+
+
+	<section class="main_content dashboard_part">
+
+		<div class="main_content_iner ">
+			<div class="container-fluid p-0">
+				<div class="row">
+					<div class="col-xl-6">
+						<div class="white_box mb_30">
+							<div class="box_header ">
+								<div class="main-title">
+									<h3 class="mb-0">Sales Chart</h3>
+								</div>
+							</div>
+							<canvas style="height: 250px" id="sales-chart"></canvas>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+
+	</section>
+
+	<script src="js/jquery-3.4.1.min.js"></script>
+ 
+	<script src="js/chart.min.js"></script>
+
+
+	<script type="text/javascript">
+		(function($) {
+			"use strict";
+
+			const ctx = document.getElementById("sales-chart").getContext('2d');
+			const gradientStroke1 = ctx.createLinearGradient(500, 0, 100, 0);
+			gradientStroke1.addColorStop(0, "#f53c79");
+			gradientStroke1.addColorStop(1, "#f0ae00");
+
+			const gradientStroke2 = ctx.createLinearGradient(500, 0, 100, 0);
+			gradientStroke2.addColorStop(0, "#4400eb");
+			gradientStroke2.addColorStop(1, "#44ecf5");
+
+			const gradientStroke3 = ctx.createLinearGradient(500, 0, 100, 0);
+			gradientStroke3.addColorStop(0, "#36b9d8");
+			gradientStroke3.addColorStop(1, "#4bffa2");
+
+			ctx.height = 100;
+
+			new Chart(ctx, {
+				type : 'line',
+				data : {
+					labels : [ "2010", "2011", "2012", "2013", "2014", "2015",
+							"2016" ],
+					type : 'line',
+					defaultFontFamily : 'Poppins',
+					datasets : [ {
+						label : "Clothes",
+						data : [ 0, 10, 20, 10, 25, 75, 50 ],
+						backgroundColor : 'transparent',
+						borderColor : gradientStroke1,
+						borderWidth : 3,
+						pointStyle : 'circle',
+						pointRadius : 5,
+						pointBorderColor : 'transparent',
+						pointBackgroundColor : gradientStroke1,
+
+					}, {
+						label : "Foods",
+						data : [ 0, 30, 10, 60, 50, 63, 10 ],
+						backgroundColor : 'transparent',
+						borderColor : gradientStroke2,
+						borderWidth : 3,
+						pointStyle : 'circle',
+						pointRadius : 5,
+						pointBorderColor : 'transparent',
+						pointBackgroundColor : gradientStroke2,
+					}, {
+						label : "Electronics",
+						data : [ 0, 50, 40, 20, 40, 79, 20 ],
+						backgroundColor : 'transparent',
+						borderColor : gradientStroke3,
+						borderWidth : 3,
+						pointStyle : 'circle',
+						pointRadius : 5,
+						pointBorderColor : 'transparent',
+						pointBackgroundColor : gradientStroke3,
+					} ]
+				},
+				options : {
+					responsive : true,
+
+					tooltips : {
+						mode : 'index',
+						titleFontSize : 12,
+						titleFontColor : '#000',
+						bodyFontColor : '#000',
+						backgroundColor : '#fff',
+						titleFontFamily : 'Montserrat',
+						bodyFontFamily : 'Montserrat',
+						cornerRadius : 3,
+						intersect : false,
+					},
+					legend : {
+						labels : {
+							usePointStyle : true,
+							fontFamily : 'Montserrat',
+						},
+					},
+					scales : {
+						xAxes : [ {
+							display : true,
+							gridLines : {
+								display : false,
+								drawBorder : false
+							},
+							scaleLabel : {
+								display : false,
+								labelString : 'Month'
+							}
+						} ],
+						yAxes : [ {
+							display : true,
+							gridLines : {
+								display : false,
+								drawBorder : false
+							},
+							scaleLabel : {
+								display : true,
+								labelString : 'Value'
+							},
+							ticks : {
+								max : 200,
+								min : 0,
+								stepSize : 20
+							}
+						} ]
+					},
+					title : {
+						display : false,
+						text : 'Normal Legend'
+					}
+				}
+			});
+
+		})(jQuery);
+	</script>
+
+
+</body>
+
+<!-- Mirrored from demo.dashboardpack.com/hospital-html/chartjs.html by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 05 Mar 2022 06:58:36 GMT -->
+</html>

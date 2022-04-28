@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.notification.mapper.NotificationMapper">
+	<!-- 회원상세정보 resultMap -->
+	<resultMap type="kr.or.ddit.notification.vo.NotificationVO" id="notificationMap">
+		<id     property="notNo" column="NOT_NO" />
+		<result property="empCd" column="EMP_CD" />
+		<result property="pntCd" column="PNT_CD" />
+		<result property="cmCd" column="CM_CD" />
+		<result property="notYn" column="NOT_YN" />
+		<result property="chkYn" column="CHK_YN" />
+		<result property="notUrl" column="NOT_URL" />
+		<result property="notDt" column="NOT_DT" />
+		<result property="cdNm" column="CD_NM" />
+		<result property="cdEx" column="CD_EX" />
+		<result property="opt" column="OPT" />
+		<result property="pntNm" column="PNT_NM" />
+	</resultMap>
+	
+	<!-- 본인 알림 조회 후 toast
+	, PATIENT P
+	AND N.PNT_CD=P.PNT_CD -->
+	<select id="checkNotification" parameterType="string" resultMap="notificationMap">
+		SELECT N.NOT_NO,N.EMP_CD,N.PNT_CD,N.CM_CD
+		      ,N.NOT_YN,N.CHK_YN,N.NOT_URL
+		      ,ROUND((SYSDATE-TO_DATE(N.NOT_DT,'YYYYMMDDHH24MISS'))*24*60*60) NOT_DT
+		      ,C.CD_NM,C.CD_EX,C.OPT,(SELECT PNT_NM FROM PATIENT WHERE PNT_CD=N.PNT_CD) PNT_NM
+		  FROM NOTIFICATION N, CM_CD C
+		 WHERE N.CM_CD=C.CM_CD
+		   AND EMP_CD=#{empCd}
+		   AND N.CM_CD NOT IN ('CN01', 'CN02', 'CN03')
+		   AND NOT_YN=0
+	</select>
+	
+	<!-- 본인 알림 리스트에 출력 -->
+	<select id="printNotification" parameterType="string" resultMap="notificationMap">
+		SELECT N.NOT_NO,N.EMP_CD,N.PNT_CD,N.CM_CD
+		      ,N.NOT_YN,N.CHK_YN,N.NOT_URL
+		      ,ROUND((SYSDATE-TO_DATE(N.NOT_DT,'YYYYMMDDHH24MISS'))*24*60*60) NOT_DT
+		      ,C.CD_NM,C.CD_EX,C.OPT,(SELECT PNT_NM FROM PATIENT WHERE PNT_CD=N.PNT_CD) PNT_NM
+		  FROM NOTIFICATION N, CM_CD C
+		 WHERE N.CM_CD=C.CM_CD
+		   AND EMP_CD=#{empCd}
+		   AND N.CM_CD NOT IN ('CN01', 'CN02', 'CN03')
+		   AND CHK_YN=0
+		 ORDER BY NOT_DT 
+	</select>
+	
+	<!-- 알림 띄운 후 알림여부 변경 -->
+	<update id="updateNotYn">
+		UPDATE NOTIFICATION
+		   SET NOT_YN=1
+		 WHERE EMP_CD IN (SELECT EMP_CD FROM EMP WHERE STATE_CD='ES1')
+	</update>
+	
+	<!-- 알림 클릭 시 확인여부 1로 변경 -->
+	<update id="updateChkYn" parameterType="int">
+		UPDATE NOTIFICATION
+		   SET CHK_YN=1
+		 WHERE NOT_NO=#{notNo}
+	</update>
+	
+	<!-- 전체 알림 지우기 -->
+	<update id="allRead" parameterType="string">
+		UPDATE NOTIFICATION
+		   SET CHK_YN=1
+		 WHERE EMP_CD=#{empCd}
+		   AND CM_CD NOT IN ('CN01', 'CN02', 'CN03')
+	</update>
+</mapper>
